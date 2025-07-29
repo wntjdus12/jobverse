@@ -1,0 +1,87 @@
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #b0c4d5;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #d3d3d3;
+}
+
+.divider::before {
+  margin-right: 10px;
+}
+
+.divider::after {
+  margin-left: 10px;
+}
+
+
+.social-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 10px;
+  margin-bottom: 40px;
+  
+}
+
+.social-icon {
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  border-radius: 50%;
+  object-fit: contain;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1); 
+  
+}
+
+.register-text {
+  font-size: 14px;
+  margin-top: 10px;
+  color: #666;
+  display: block;
+  text-align: center;
+}
+
+.register-link {
+  color: #5a4fff;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 5px;
+  transition: color 0.2s ease;
+}
+
+.register-link:hover {
+  color: #3b2ded;
+  text-decoration: underline;
+}
+
+.social-icon:hover {
+  transform: scale(1.1);
+}
+
+.login-box {
+  margin-bottom: 50px;
+  border-radius: 30px;
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;;
+}
+
+.login-box-wrapper {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.display-center{
+  display: flex;
+  justify-content: center; 
+  align-items: center;
+}
