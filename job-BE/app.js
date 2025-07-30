@@ -6,7 +6,7 @@ const indexRouter = require("./routes/index")
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173", // React 개발 주소
+  origin: "http://3.39.202.109:5173", // React 개발 주소
   credentials: true,
 }));
 
