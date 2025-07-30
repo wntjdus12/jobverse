@@ -45,7 +45,7 @@ const LoginPage = ({setUser, user}) => {
       <div>
         {error && <div className="red-error">{error}</div>}
       <Form className="login-box" onSubmit={handleLogin}>
-        <h5 style={{marginLeft:20}}>반가워요!</h5>
+        <h5 style={{marginLeft:20}}>반가워요</h5>
         
         <h2><span style={{fontWeight:1000, color:"#9370DB"}}>" JobVerse "</span> 에 오신 것을 환영해요</h2>
         <hr></hr>
