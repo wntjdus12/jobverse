@@ -1,0 +1,12 @@
+@import "tailwindcss";
+/* src/index.css 또는 src/main.css의 가장 위에 추가 */
+@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -1,14 +1,14 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_BACKEND_URL}/api`,
+  baseURL: '/api',
   headers: {
     "Content-Type": "application/json",
     authorization: "Bearer " + sessionStorage.getItem("token"),
   },
 });
 /**
- * console.log all requests and responses
+ * 요청 
  */
 api.interceptors.request.use(
   (request) => {
@@ -20,6 +20,9 @@ api.interceptors.request.use(
   }
 );
 
+/**
+ * 응답 
+ */
 api.interceptors.response.use(
   (response) => {
     console.log("Response:", response);

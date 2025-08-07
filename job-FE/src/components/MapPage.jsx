@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./MapPage.css";
 import JobSelector from "./JobSelector";
+import Header from "./Header";
+
 
 const zepLinks = {
   개발: "https://zep.us/play/dJGaXo",
@@ -54,6 +56,8 @@ const MapPage = () => {
   };
 
   return (
+    <>
+    <Header />
     <div className="map-container">
       <img
         src="./assets/room.jpg"
@@ -75,6 +79,7 @@ const MapPage = () => {
 
       {showLocationPopup && <JobSelector onSelect={handleJobSelect} />}
     </div>
+    </>
   );
 };
 

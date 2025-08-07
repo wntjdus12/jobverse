@@ -7,6 +7,10 @@ import MapPage from "./components/MapPage";
 import { useEffect, useState } from "react";
 import PrivateRoute from "./route/PrivateRoute";
 import api from "./utils/api";
+import MainPage from "./pages/MainPage";
+import MyPage from "./pages/MyPage";
+
+
 
 
 function App() {
@@ -31,10 +35,11 @@ useEffect(()=> {
 
   return (
     <Routes>
-      <Route path="/" element={<PrivateRoute user={user}><MapPage /></PrivateRoute>} />
+      <Route path="/" element={<PrivateRoute user={user}><MainPage /></PrivateRoute>} />
       <Route path="/register" element={<RegisterPage />} />
-
+      <Route path="/map" element={<MapPage />} />
       <Route path="/login" element={<LoginPage user={user} setUser={setUser}/>} />
+      <Route path="/mypage" element={<MyPage/>} />
     </Routes>
   );
 }

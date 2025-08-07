@@ -16,8 +16,10 @@ const LoginPage = ({setUser, user}) => {
     try {
       const response = await api.post('/user/login', { email, password });
       if (response.status === 200) {
+        const userData = response.data.user;
         setUser(response.data.user);
         sessionStorage.setItem("token", response.data.token);
+        sessionStorage.setItem("user", JSON.stringify(userData))
         api.defaults.headers["authorization"] = "Bearer " + response.data.token;
         setError("");
         navigate("/");

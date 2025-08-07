@@ -2,11 +2,9 @@
     display: flex;
     justify-content: center;
 }
-
-body{
-  color: rgb(204, 163, 230) !important ;
-  background-color: rgb(235, 210, 243) !important; 
-  font-family: 'Pretendard Variable', sans-serif;
+body {
+  background-color: rgb(248, 236, 248);
+  color: rgb(155, 98, 207);
 }
 
 .todo-item{
