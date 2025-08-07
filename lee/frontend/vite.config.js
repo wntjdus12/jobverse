@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
   plugins: [react()],
   server: {
+    allowedHosts: ['jobverse.site'], // 도메인
     host: '0.0.0.0',   // 모든 IP에서 접근 가능하게 함
     port: 8501         // 포트를 8501번으로 설정
   }
