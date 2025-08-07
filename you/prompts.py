@@ -1,118 +1,350 @@
 # prompts.py
-from typing import Dict, Any, Optional
-from job_data import JOB_DETAILS
+import json
+from typing import Dict, Any, Optional, List, Tuple
+
+def get_company_analysis_prompt(company_name: str) -> Tuple[str, str]:
+    """
+    기업 분석을 위한 OpenAI AI 모델 프롬프트를 생성합니다.
+    """
+    system_instruction = f"""
+당신은 기업 분석 전문가 AI입니다. 사용자가 제시한 기업의 특징, 주요 사업, 핵심 가치, 인재상 등을 종합적으로 분석하고 요약하여 제공해야 합니다.
+**모든 응답 내용은 반드시 한국어로만 작성해야 합니다.**
+기업 분석 정보는 지원자가 자기소개서, 이력서, 포트폴리오를 작성할 때 직무 적합성을 높이는 데 활용될 수 있도록 구체적이고 실질적인 내용을 담고 있어야 합니다.
+응답은 반드시 다음 JSON 형식으로 이루어져야 합니다.
+
+{{
+    "company_summary": "string", // 기업의 주요 사업, 강점 등을 객관적으로 요약
+    "key_values": "string", // 기업의 핵심 가치, 문화, 인재상 등에 대한 분석
+    "competencies_to_highlight": ["string", "string"], // 지원자가 강조하면 좋은 역량
+    "interview_tips": "string" // 면접에 대비하여 준비하면 좋을 점
+}}
+"""
+    user_prompt = f"다음 기업에 대해 분석해주세요: {company_name}"
+    return system_instruction, user_prompt
 
 def get_document_analysis_prompt(
     job_title: str,
     doc_type: str,
     document_content: Dict[str, Any],
-    job_competencies: Optional[list[str]] = None,
-    previous_document_content: Optional[Dict[str, Any]] = None, # 이전 버전 문서 내용
-    previous_feedback: Optional[str] = None, # 이전 버전 피드백
-    older_document_content: Optional[Dict[str, Any]] = None, # 그 이전 버전 문서 내용 (vN-2)
-    older_feedback: Optional[str] = None # 그 이전 버전 피드백 (vN-2)
-) -> str:
+    job_competencies: Optional[List[str]] = None,
+    previous_document_data: Optional[Dict[str, Any]] = None,
+    older_document_data: Optional[Dict[str, Any]] = None,
+    additional_user_context: Optional[str] = None,
+    company_name: Optional[str] = None, # 추가
+    company_analysis: Optional[Dict[str, Any]] = None, # 추가
+) -> Tuple[str, str]:
     """
     OpenAI AI 모델에 전달할 문서 분석 프롬프트를 생성합니다.
-    이전 버전의 문서 내용과 피드백을 포함하여 AI가 더 정밀한 피드백을 제공하도록 합니다.
+    시스템 지시와 사용자 프롬프트를 분리하여 반환합니다.
     """
-    base_feedback_prompt = f"당신은 {job_title} 직무 채용 전문가 AI입니다. 다음 내용을 분석하여 지원자의 서류 합격 가능성을 높일 수 있는 구체적인 피드백을 제공해주세요. 불필요한 서론 없이 바로 피드백 본론부터 시작하세요.\\n\\n"
-    base_summary_prompt = f"당신은 {job_title} 직무 채용 전문가입니다. 다음 내용을 바탕으로 한 장짜리 요약본(핵심 경력, 프로젝트, 성과 중심)을 작성해 주세요. 요약은 간결하고 핵심적이어야 합니다.\\n\\n"
-
-    history_context = ""
-    if older_document_content is not None and older_feedback is not None:
-        older_content_formatted = "\n".join([f"{k}: {v}" for k, v in older_document_content.items()]) if doc_type != "cover_letter" else \
-                                  f"지원동기 및 전문성: {older_document_content.get('motivation_expertise', '')}\n협업 경험: {older_document_content.get('collaboration_experience', '')}"
-        history_context += f"""
---- 이전 버전 문서 (vN-2) ---
-내용:
-{older_content_formatted}
-이 버전에 대한 피드백:
-{older_feedback}
-"""
-
-    if previous_document_content is not None and previous_feedback is not None:
-        previous_content_formatted = "\n".join([f"{k}: {v}" for k, v in previous_document_content.items()]) if doc_type != "cover_letter" else \
-                                     f"지원동기 및 전문성: {previous_document_content.get('motivation_expertise', '')}\n협업 경험: {previous_document_content.get('collaboration_experience', '')}"
-        history_context += f"""
---- 직전 버전 문서 (vN-1) ---
-내용:
-{previous_content_formatted}
-이 버전에 대한 피드백:
-{previous_feedback}
-"""
     
-    common_instructions = ""
-    if history_context:
-        common_instructions += f"""
---- 피드백 지침 ---
-- 현재 문서 내용을 직전 버전 (vN-1) 및 그 이전 버전 (vN-2)과 비교하여 피드백을 제공합니다.
-- 직전 버전 (vN-1)의 내용과 피드백을 더 중요하게 고려합니다.
-- 이전 버전에 비해 어떤 점이 개선되었는지, 혹은 어떤 점이 여전히 미흡한지 구체적으로 언급합니다.
-- 만약 이전 버전과 현재 문서 내용 간에 실질적인 변화가 거의 없다면, 그 점을 명확히 지적하고 여전히 개선이 필요함을 강조합니다.
-{history_context}
+    # --- 시스템 지시 (role: system) ---
+    system_instruction = f"""
+당신은 {job_title} 직무 채용 전문가 AI입니다. 지원자의 서류 합격 가능성을 높일 수 있는 구체적이고 실행 가능한 피드백을 제공해야 합니다.
+**모든 응답 내용은 반드시 한국어로만 작성해야 합니다.**
+사용자의 피드백 요청에 따라, 현재 문서 내용을 이전 버전과 비교하고, 이전 피드백이 어떻게 반영되었는지 평가하여 맞춤형 피드백을 제공합니다.
+**주의: 이전 버전에 비해 내용이 추가되었더라도, 그 내용이 직무 적합성, 구체성, 논리성, 완성도 측면에서 오히려 품질이 저하되거나 엉성해졌다면 이를 명확히 지적하고, 개선이 필요함을 강조해야 합니다. 단순히 '변화가 있다'는 이유만으로 긍정적인 피드백을 제공해서는 안 됩니다.**
+응답은 반드시 다음 JSON 형식으로 이루어져야 합니다.
+
+{{
+    "summary": "string", // 문서 전체 내용을 객관적으로 요약합니다.
+    "overall_feedback": "string", // 요약된 내용을 바탕으로 개선점을 제안하는 종합 피드백입니다.
+    "individual_feedbacks": {{ // 각 개별 필드/질문에 대한 피드백을 포함하는 객체입니다.
+        "education_highschool_feedback": "string",
+        "education_university_feedback": "string",
+        "education_graduate_school_feedback": "string",
+        "extracurricular_activities_feedback": "string",
+        "career_feedback": "string",
+        "foreign_language_feedback": "string",
+        "certifications_feedback": "string",
+        "awards_feedback": "string",
+        "training_feedback": "string",
+        "tech_stack_feedback": "string"
+        // ... 관련 필드들에 대해 계속 이어집니다.
+    }}
+}}
+모든 문자열 값은 유효한 JSON 문자열이어야 합니다 (예: 개행 문자 및 따옴표 처리).
 """
+    # --- 사용자 프롬프트 (role: user) ---
+    user_prompt_parts = []
+    
+    if company_name and company_analysis:
+        user_prompt_parts.append(f"지원자는 {company_name}의 {job_title} 직무에 지원하고 있습니다.\n")
+        user_prompt_parts.append("\n--- 기업 분석 내용 ---")
+        user_prompt_parts.append(f"**기업 요약:** {company_analysis.get('company_summary', '정보 없음')}")
+        user_prompt_parts.append(f"**핵심 가치/문화:** {company_analysis.get('key_values', '정보 없음')}")
+        user_prompt_parts.append(f"**강조할 역량:** {', '.join(company_analysis.get('competencies_to_highlight', []))}")
+        user_prompt_parts.append(f"**면접 팁:** {company_analysis.get('interview_tips', '정보 없음')}")
+        user_prompt_parts.append("\n기업 분석 내용을 바탕으로 지원자의 문서가 해당 기업에 얼마나 잘 맞는지 고려하여 피드백을 제공해주세요.")
+        
+    user_prompt_parts.append(f"Analyzing {doc_type} for the role of: {job_title}\n")
+
+    if job_competencies:
+        user_prompt_parts.append(f"Key competencies for this role: {', '.join(job_competencies)}\n")
+
+    # 문서 내용 및 피드백 지시
+    user_prompt_parts.append("\n--- 현재 문서 내용 (최신 버전) ---")
+    
+    def format_doc_content(content: Dict[str, Any], d_type: str) -> str:
+        if d_type == "cover_letter":
+            questions_map = {
+                "reason_for_application": "지원 동기",
+                "expertise_experience": "전문성 경험",
+                "collaboration_experience": "협업 경험",
+                "challenging_goal_experience": "도전적 목표 경험",
+                "growth_process": "성장 과정",
+            }
+            formatted_parts = []
+            for field_name, label in questions_map.items():
+                content_text = content.get(field_name, "작성되지 않음").strip()
+                formatted_parts.append(f"{label}: {content_text}")
+            return "\n".join(formatted_parts)
+        elif d_type == "resume":
+            formatted_parts = []
+
+            # 학력
+            formatted_parts.append("\n**학력 사항:**")
+            if 'education_highschool' in content:
+                formatted_parts.append("  - 고등학교:")
+                for item in content['education_highschool']:
+                    formatted_parts.append(f"    - 학교명: {item.get('school_name', '')}, 입학/졸업: {item.get('start_date', '')}~{item.get('end_date', '')}, 졸업유형: {item.get('graduation_type', '')}")
+            if 'education_university' in content:
+                formatted_parts.append("  - 대학교:")
+                for item in content['education_university']:
+                    formatted_parts.append(f"    - 학교명: {item.get('school_name', '')}, 전공: {item.get('major', '')}, 학점: {item.get('gpa', '')}/{item.get('total_gpa', '')}")
+            if 'education_graduate_school' in content:
+                formatted_parts.append("  - 대학원:")
+                for item in content['education_graduate_school']:
+                    formatted_parts.append(f"    - 학교명: {item.get('school_name', '')}, 전공: {item.get('major', '')}, 학위: {item.get('degree', '')}")
+
+            # 학내외 활동
+            if 'extracurricular_activities' in content:
+                formatted_parts.append("\n**학내외 활동:**")
+                for item in content['extracurricular_activities']:
+                    formatted_parts.append(f"  - 단체명: {item.get('organization_name', '')}, 역할: {item.get('role', '')}, 내용: {item.get('description', '')}")
+
+            # 경력
+            if 'career' in content:
+                formatted_parts.append("\n**경력 사항:**")
+                for item in content['career']:
+                    formatted_parts.append(f"  - 회사명: {item.get('company_name', '')}, 직급: {item.get('position', '')}, 입사/퇴사: {item.get('start_date', '')}~{item.get('end_date', '')}, 업무 내용: {item.get('description', '')}")
+            
+            # 외국어
+            if 'foreign_language' in content:
+                formatted_parts.append("\n**외국어:**")
+                for item in content['foreign_language']:
+                    formatted_parts.append(f"  - 언어: {item.get('language', '')}, 시험 종류: {item.get('exam_type', '')}, 점수: {item.get('score', '')}")
+
+            # 자격증
+            if 'certifications' in content:
+                formatted_parts.append("\n**자격증:**")
+                for item in content['certifications']:
+                    formatted_parts.append(f"  - 자격증명: {item.get('certificate_name', '')}, 발급기관: {item.get('issuing_organization', '')}, 취득일: {item.get('acquisition_date', '')}")
+
+            # 수상 내역
+            if 'awards' in content:
+                formatted_parts.append("\n**수상 내역:**")
+                for item in content['awards']:
+                    formatted_parts.append(f"  - 수상명: {item.get('award_name', '')}, 주최: {item.get('organizer', '')}, 수상내역: {item.get('award_details', '')}, 수상일: {item.get('award_date', '')}")
+
+            # 교육
+            if 'training' in content:
+                formatted_parts.append("\n**교육 이수:**")
+                for item in content['training']:
+                    formatted_parts.append(f"  - 교육명: {item.get('training_name', '')}, 기관: {item.get('organizer', '')}, 기간: {item.get('start_date', '')}~{item.get('end_date', '')}")
+
+            # 기술 스택
+            if 'tech_stack' in content:
+                formatted_parts.append("\n**기술 스택:**")
+                for item in content['tech_stack']:
+                    formatted_parts.append(f"  - 기술명: {item.get('tech_name', '')}, 숙련도: {item.get('proficiency', '')}")
+
+            if not formatted_parts:
+                return "이력서 내용이 작성되지 않았습니다."
+            
+            return "\n".join(formatted_parts)
+        elif d_type in ["portfolio_summary_url", "portfolio_summary_text"]:
+            if "portfolio_url" in content:
+                return f"포트폴리오 URL: {content['portfolio_url']}"
+            elif "extracted_text" in content:
+                # 추출된 텍스트가 너무 길 경우 일부만 보여줌
+                return f"추출된 텍스트:\n{content['extracted_text'][:2000]}..."
+            return str(content)
+        elif d_type == "portfolio":
+            summary_content = content.get("summary", "요약 내용 없음")
+            link_info = f"링크: {content.get('portfolio_link', '제공되지 않음')}"
+            pdf_info = f"PDF 파일명: {content.get('portfolio_pdf_filename', '제공되지 않음')}"
+            return f"요약 내용:\n{summary_content}\n{link_info}\n{pdf_info}"
+        return json.dumps(content, ensure_ascii=False, indent=2)
+
+    current_content_formatted = format_doc_content(document_content, doc_type)
+    user_prompt_parts.append(current_content_formatted)
+
+    history_context_parts = []
+
+    if previous_document_data and previous_document_data.get("content"):
+        history_context_parts.append(f"""
+--- 가장 관련성 높은 이전 버전 (v{previous_document_data.get('version', 'unknown')}) 문서 ---
+내용:
+{format_doc_content(previous_document_data['content'], doc_type)}
+이 버전에 대한 전체 피드백:
+{previous_document_data.get('feedback', '제공된 피드백 없음')}
+""")
+    if older_document_data and older_document_data.get("content"):
+        history_context_parts.append(f"""
+--- 그 다음 관련성 높은 이전 버전 (v{older_document_data.get('version', 'unknown')}) 문서 ---
+내용:
+{format_doc_content(older_document_data['content'], doc_type)}
+이 버전에 대한 전체 피드백:
+{older_document_data.get('feedback', '제공된 피드백 없음')}
+""")
+
+    if history_context_parts:
+        user_prompt_parts.append(f"""
+--- 피드백 지침 ---
+- 현재 문서 내용을 바탕으로, **아래에 제시된 가장 관련성 높은 이전 문서 내용과 피드백을 반드시 참고하여 피드백을 제공합니다.**
+- 특히 이전 버전(v{previous_document_data.get('version', '이전') if previous_document_data else '이전'})과 현재 버전의 주요 변경점(추가, 수정, 삭제)을 명확히 파악하고, 이에 대해 구체적으로 언급하며 개선되었는지 또는 여전히 미흡한지 평가해주세요.
+- 만약 참조된 이전 내용과 현재 문서 내용 간에 실질적인 변화가 거의 없다면, 그 점을 명확히 지적하고 여전히 개선이 필요함을 강조합니다.
+- **가장 중요한 점은, 현재 문서 내용이 이전 버전보다 질적으로 떨어지거나, 직무 적합성, 구체성, 논리성, 완성도 측면에서 '엉성해졌다'고 판단될 경우, 이를 명확하고 비판적으로 지적해야 합니다.** 단순히 내용이 채워졌다고 해서 긍정적으로 평가하지 마세요.
+- **피드백은 '이전 버전과 비교했을 때, ...' 또는 'v{previous_document_data.get('version', '이전')}(이전 버전) 대비 ...' 와 같이 이전 버전을 명시적으로 언급하며 시작해주세요.**
+{"".join(history_context_parts)}
+""")
+
+    if additional_user_context:
+        user_prompt_parts.append(f"""
+--- 사용자 피드백 반영 내용 ---
+지원자는 이전 피드백에 대해 다음과 같이 반영했다고 설명했습니다:
+"{additional_user_context}"
+AI는 이 사용자 설명을 고려하여, **실제로 반영되었는지 여부를 확인하고, 반영 노력을 칭찬하거나 추가 개선점을 제안하는 피드백을 제공해야 합니다.**
+""")
+
+    user_prompt_parts.append("\n--- 피드백 요청 ---")
 
     if doc_type == "resume":
-        content_str = "\n".join([f"{key}: {value}" for key, value in document_content.items()])
-        
-        tech_stack_feedback_request = ""
-        if job_competencies:
-            tech_stack_feedback_request = f"""
-- 지원자가 제시한 기술 스택({', '.join(job_competencies)})과 이력서 내용이 얼마나 잘 부합하는지 평가하고, 부족한 부분이 있다면 보완 방안을 제시해주세요.
-"""
-
-        prompt = f"""{base_feedback_prompt}
---- 현재 이력서 분석 (최신 버전) ---
-현재 이력서 내용:
-{content_str}
-
-[피드백 요청]
-- 답변은 500자 이내로 간결하게 작성해주세요.
+        user_prompt_parts.append(f"""
+- **지원자가 제공한 내용만을 기반으로 구체적인 피드백을 제공해주세요.**
 - 현재 이력서 내용과 {job_title} 직무의 필수 역량 및 자격증 정보(기술 스택 포함)를 바탕으로 합격 가능성을 높일 수 있는 구체적인 피드백을 제공해주세요.
-{tech_stack_feedback_request}
-- 불필요한 서론 없이 바로 피드백 본론부터 시작하세요.
+- **만약 특정 항목의 내용이 '작성되지 않음 (누락)'으로 기재되어 있거나 비어있는 경우, 그 내용을 그대로 인지하고 '해당 정보가 누락되어 있습니다.'라고 명확히 언급한 후, 어떤 내용을 채워야 할지 구체적인 가이드라인을 제시해주세요. 존재하지 않는 내용을 상상하여 기재하지 마세요.**
 - 이력서 내용이 직무에 얼마나 적합하고 어필되는지 분석해주세요.
-- 각 섹션(학력, 경력, 자격증 등)의 내용이 얼마나 잘 구성되어 있는지 평가해주세요.
-- 이전에 적은 이력서와 비교하여 어떤 점이 개선되었는지, 혹은 어떤 점이 여전히 미흡한지 구체적으로 언급해주세요.
-- 변화한게 없다면 그 점을 명확히 지적하고 여전히 개선이 필요함을 강조해주세요.
-{common_instructions}
-"""
-    elif doc_type == "cover_letter":
-        motivation_expertise = document_content.get('motivation_expertise', '')
-        collaboration_experience = document_content.get('collaboration_experience', '')
-        
-        prompt = f"""{base_feedback_prompt}
---- 현재 자기소개서 분석 (최신 버전) ---
-현재 자기소개서 내용:
-지원동기 및 전문성: {motivation_expertise}
-공동의 목표를 위해 협업을 한 경험: {collaboration_experience}
+- 각 섹션의 내용이 얼마나 잘 구성되어 있는지 평가해주세요.
+- 전체적인 피드백은 'overall_feedback'에 담고, 각 세부 항목(예: 'education_highschool_feedback', 'career_feedback')에 대한 피드백은 'individual_feedbacks' 객체 안에 해당 항목 이름을 키로 사용하여 **간결하게 1~2문장으로** 작성해주세요.
+- **개인 정보 (이름, 이메일, 연락처 등)는 피드백 대상에서 제외하고 언급하지 마세요.**
 
-[피드백 요청]
+다음 항목들에 대해 집중적으로 피드백해주세요:
+- **education_highschool_feedback (고등학교 학력):** 학력 정보의 명확성, 직무 관련성, 중요 학업 경험 강조 여부.
+- **education_university_feedback (대학교 학력):** 전공과 직무의 관련성, 학점의 중요도, 프로젝트/논문 등 구체적 성과 강조 여부.
+- **education_graduate_school_feedback (대학원 학력):** 연구 분야와 직무의 관련성, 주요 연구 성과 강조 여부.
+- **extracurricular_activities_feedback (학내외 활동):** 활동 내용의 중요성, 직무 관련성, 기여도 명확성, 배운 점 어필 여부.
+- **career_feedback (경력):** 경력의 구체성, 성과 중심 서술 (수치 포함), 직무 연관성, 역할 및 책임 명확성.
+- **foreign_language_feedback (외국어):** 외국어 능력과 직무의 관련성, 공인 시험 점수나 등급의 중요성.
+- **certifications_feedback (자격증):** 직무 관련 자격증 유무, 중요도, 취득일 명확성, 강점 부각 여부.
+- **awards_feedback (수상 내역):** 수상 및 공모전 내용의 중요성, 직무 관련성, 기여도 명확성.
+- **training_feedback (교육 이수):** 이수한 교육의 내용과 직무의 관련성, 수료 시 얻은 기술이나 경험 강조 여부.
+- **tech_stack_feedback (기술 스택):** 기술 스택의 적절성, 구체성 (버전, 숙련도), 직무 요구사항 부합 여부, 프로젝트 활용 경험.
+
+""")
+        if job_competencies:
+            user_prompt_parts.append(f"- 지원자가 제시한 기술 스택({', '.join(job_competencies)})과 이력서 내용이 얼마나 잘 부합하는지 평가하고, 부족한 부분이 있다면 보완 방안을 제시해주세요.")
+
+    elif doc_type == "cover_letter":
+        questions_info = [
+            {"name": "reason_for_application", "label": "해당 직무에 지원한 이유"},
+            {"name": "expertise_experience", "label": "해당 분야에 대한 전문성을 기르기 위해 노력한 경험"},
+            {"name": "collaboration_experience", "label": "공동의 목표를 위해 협업을 한 경험"},
+            {"name": "challenging_goal_experience", "label": "도전적인 목표를 세우고 성취하기 위해 노력한 경험"},
+            {"name": "growth_process", "label": "자신의 성장과정"},
+        ]
+        
+        user_prompt_parts.append(f"""
 - 자기소개서 내용이 {job_title} 직무에 얼마나 적합하고 어필되는지 분석해주세요.
-- 지원동기, 전문성, 협업 경험을 더 효과적으로 나타내기 위한 구체적인 개선 방안을 제시해주세요.
+- 전체적인 피드백은 'overall_feedback'에 담아주세요.
+- **각 질문별로 다음 항목들을 고려하여 구체적인 피드백과 개선 방안을 제시해주세요.** 이 피드백은 'individual_feedbacks' 객체 안에 해당 질문의 `name` (예: `reason_for_application`, `expertise_experience` 등)을 키로 사용하여 작성해주세요.
+- **각 질문에 대한 내용이 비어있거나 '없음'으로 기재된 경우, 해당 질문에 대한 피드백에 '내용이 없습니다. 어떤 내용을 채워야 할지 구체적인 가이드라인을 제시해주세요.'와 같이 명확히 언급해주세요.**
+- **만약 내용이 존재하더라도 피상적이거나, 직무와 관련성이 떨어지거나, 논리적 흐름이 엉성하거나, 구체적인 사례가 부족하여 이전 버전보다 품질이 낮아졌다고 판단되면, 그 점을 명확히 지적하고 구체적인 개선 방안을 제시해야 합니다.**
+- **모든 피드백과 요약은 반드시 한국어로 작성해주세요.**
+
+**새로운 지침:**
+""")
+
+        if company_name:
+            user_prompt_parts.append(f"- **`reason_for_application` (지원 동기)** 항목의 내용이 분석 대상 기업인 **'{company_name}'**과 관련이 있는지 확인해주세요. 만약 다른 기업명이 언급되어 있거나, 기업명이 불분명할 정도로 일반적인 내용이라면, 지원 동기가 해당 기업에 대한 맞춤형 내용이 아니라는 점을 명확히 지적하고 개선을 위한 구체적인 조언을 제공해야 합니다.")
+        else:
+            user_prompt_parts.append(f"- **`reason_for_application` (지원 동기)** 항목의 내용이 **특정 기업에 한정되지 않고 너무 일반적이거나, 지원하는 직무에 대한 구체성이 부족하다면** 이를 지적하고, 맞춤형 지원 동기를 작성할 수 있도록 조언해주세요.")
+
+        for q_info in questions_info:
+            user_prompt_parts.append(f"- **{q_info['label']} (`{q_info['name']}`):**")
+            user_prompt_parts.append(f"  - 직무 이해도, 직무 적합성, 회사/산업군 관심, 기여 의지 및 성장 가능성 등을 고려하여 평가합니다. **(내용이 피상적이거나, 단순히 열정만 나열하는 경우 부족하다고 평가)**")
+            user_prompt_parts.append(f"  - 자기 주도성, 학습 능력, 지속적인 성장 의지, 실제 적용 능력, 문제 해결 능력 및 성과 등을 고려하여 평가합니다. **(구체적인 경험, 과정, 결과, 수치가 부족한 경우 부족하다고 평가)**")
+            user_prompt_parts.append(f"  - 팀워크, 협업 능력, 책임감, 갈등 관리 및 조율 능력, 타인에 대한 이해 및 존중 등을 고려하여 평가합니다. **(본인의 역할과 기여가 모호하거나, 갈등 해결 과정이 불분명한 경우 부족하다고 평가)**")
+            user_prompt_parts.append(f"  - 목표 설정 능력, 실행력, 추진력, 문제 해결 능력, 회복 탄력성 및 학습 능력 등을 고려하여 평가합니다. **(도전의 내용이 너무 일반적이거나, 성과가 미미하거나, 배운 점이 추상적인 경우 부족하다고 평가)**")
+            user_prompt_parts.append(f"  - 가치관, 인성, 핵심 역량 형성 과정, 자기 성찰 및 발전 의지, 인생의 전환점 및 중요한 경험 등을 고려하여 평가합니다. **(내용이 교훈적이거나, 직무와 무관한 개인사만 나열되는 경우 부족하다고 평가)**")
+            user_prompt_parts.append(f"  - 구체적인 예시와 함께 개선 방안을 제안해주세요.")
+        
+        user_prompt_parts.append("""
 - 문맥에 맞지 않거나 모호한 부분이 있다면 구체적으로 제시해주세요.
-- 답변의 내용이 질문의 의도와 얼마나 부합하는지 평가해주세요.
-- 구체적인 예시와 함께 개선 방안을 제안해주세요.
 - 전체적인 일관성과 논리적 흐름에 대한 피드백을 추가해주세요.
-- 이전에 적은 자기소개서와 비교하여 어떤 점이 개선되었는지, 혹은 어떤 점이 여전히 미흡한지 구체적으로 언급해주세요.
-- 변화한게 없다면 그 점을 명확히 지적하고 여전히 개선이 필요함을 강조해주세요.
-{common_instructions}
-"""
-    elif doc_type == "portfolio": # 기존 포트폴리오 피드백 로직 유지
-        content_str = "\n".join([f"{key}: {value}" for key, value in document_content.items()])
-        prompt = f"{base_feedback_prompt}--- 포트폴리오 분석 ---\n\n현재 포트폴리오 설명:\n{content_str}\n\n[피드백 요청]\n{job_title} 직무 관점에서 포트폴리오의 각 프로젝트 설명이 직무 역량과 연결되어 얼마나 잘 어필되는지 분석하고, 프로젝트의 기여도, 기술 스택, 결과물을 더 효과적으로 제시하기 위한 구체적인 개선 방안을 제시해주세요. 링크 첨부의 중요성도 언급해주세요."
-    elif doc_type == "portfolio_summary_url": # 기존 포트폴리오 요약 로직 유지
-        portfolio_url = document_content.get("portfolio_url", "")
-        if not portfolio_url:
-            return "오류: 포트폴리오 URL이 제공되지 않았습니다."
-        prompt = f"{base_summary_prompt}다음 URL의 포트폴리오를 분석해주세요.\nURL: {portfolio_url}\n\n[분석 요청]\n- 핵심 경력, 프로젝트, 성과를 중심으로 요약해주세요.\n- 기술 스택과 기여한 바를 명확히 해주세요.\n- 해당 직무와의 연관성을 고려해주세요."
-    elif doc_type == "portfolio_summary_text": # 기존 포트폴리오 요약 로직 유지
+- 답변의 내용이 질문의 의도와 얼마나 부합하는지 평가해주세요.
+""")
+
+    elif doc_type == "portfolio_summary_text":
         extracted_text = document_content.get("extracted_text", "")
         if not extracted_text:
-            return "오류: 추출된 텍스트가 제공되지 않았습니다."
-        prompt = f"{base_summary_prompt}다음 텍스트 내용을 바탕으로 포트폴리오를 분석해주세요.\n텍스트:\n{extracted_text}\n\n[분석 요청]\n- 핵심 경력, 프로젝트, 성과를 중심으로 요약해주세요.\n- 기술 스택과 기여한 바를 명확히 해주세요.\n- 해당 직무와의 연관성을 고려해주세요."
-    else:
-        return f"오류: 알 수 없는 문서 타입 '{doc_type}'입니다."
+            return system_instruction, "오류: 추출된 텍스트가 제공되지 않았습니다."
+        user_prompt_parts.append(f"""
+--- 포트폴리오 텍스트 분석 ---
+다음 텍스트 내용을 바탕으로 포트폴리오를 분석하고 **면접관이 한눈에 지원자의 핵심 역량을 파악할 수 있도록 구체적이고 효과적으로 요약**해 주세요. 그리고 요약 내용을 기반으로 합격 가능성을 높일 수 있는 **개선점 및 피드백**을 제공해주세요.
 
-    return prompt
+텍스트:
+{extracted_text}
+
+[분석 요청]
+- **요약과 모든 피드백은 반드시 한국어로 작성해주세요.**
+- **'summary' 필드에 다음 내용을 포함하여 요약해주세요:**
+    - 핵심 프로젝트의 목적과 역할 (개인/팀)
+    - 사용된 주요 기술 스택 및 개발 환경
+    - 기술적인 문제 해결 과정 및 성과 (예: 성능 최적화, 특정 문제 해결 로직 구현 등)
+    - 수치화된 성과가 있다면 반드시 강조해주세요.
+    - 지원자의 차별화된 역량이 무엇인지 명확하게 요약해주세요.
+- **'overall_feedback' 필드에 다음을 고려하여 피드백을 작성해주세요:**
+    - {job_title} 직무 관점에서 포트폴리오 내용의 강점과 약점을 분석해주세요.
+    - 특히 기술 스택의 적절성, 프로젝트 설명의 구체성(기여도, 성과)에 대한 개선점을 제안해주세요.
+- 'individual_feedbacks'는 비어있는 객체 {{}}로 반환해주세요.
+""")
+    elif doc_type == "portfolio_summary_url":
+        portfolio_url = document_content.get("portfolio_url", "")
+        if not portfolio_url:
+            return system_instruction, "오류: 포트폴리오 URL이 제공되지 않았습니다."
+        user_prompt_parts.append(f"""
+--- 포트폴리오 URL 분석 ---
+다음 URL의 포트폴리오를 분석하고 **면접관이 한눈에 지원자의 핵심 역량을 파악할 수 있도록 구체적이고 효과적으로 요약**해 주세요. 그리고 요약 내용을 기반으로 합격 가능성을 높일 수 있는 **개선점 및 피드백**을 제공해주세요.
+
+URL: {portfolio_url}
+
+[분석 요청]
+- **AI는 실제 URL에 직접 접속할 수 없습니다.** 따라서 URL만으로 포트폴리오의 구조와 내용을 유추하고, 일반적인 백엔드 포트폴리오의 성공 요건을 기반으로 분석 및 피드백을 제공합니다.
+- **'summary' 필드에 다음 내용을 포함하여 요약해주세요:**
+    - 일반적인 백엔드 포트폴리오의 구성 요소(프로젝트, 기술 스택, 성과 등)를 가정하여 요약.
+    - 특히, URL 기반 포트폴리오의 접근성, 디자인, 명확한 정보 제공 방식에 대해 요약.
+- **'overall_feedback' 필드에 다음을 고려하여 피드백을 작성해주세요:**
+    - 포트폴리오 링크의 유효성, 보안성(HTTPS), 가독성 등 기술 외적인 측면에 대한 중요성을 강조해주세요.
+    - 링크 내부에 프로젝트 별로 지원자의 역할, 사용 기술, 문제 해결 과정, 그리고 성과가 명확하게 기재되어 있어야 함을 강조해주세요.
+- 'individual_feedbacks'는 비어있는 객체 {{}}로 반환해주세요.
+""")
+    elif doc_type == "portfolio":
+        user_prompt_parts.append(f"""
+--- 포트폴리오 정보 분석 ---
+현재 저장된 포트폴리오 데이터는 다음과 같습니다.
+{json.dumps(document_content, ensure_ascii=False, indent=2)}
+
+[피드백 요청]
+- **요약과 모든 피드백은 반드시 한국어로 작성해주세요.**
+- **포트폴리오의 요약 내용을 기반으로, {job_title} 직무 관점에서 직무 역량과 얼마나 잘 연결되어 어필되는지 분석하고 구체적인 개선 방안을 제시해주세요.**
+- **포트폴리오가 URL 링크 또는 PDF 파일 형태로 제출되었을 때, 그 형식의 적절성 및 정보 접근성(예: 링크 유효성, PDF 내용 추출 가능성)에 대해서도 언급해주세요.** (AI는 실제 링크에 접근하지 않으므로, 일반적인 유의사항을 언급합니다.)
+- **포트폴리오 내용 자체를 객관적으로 요약한 내용은 'summary' 필드에, 개선 피드백은 'overall_feedback' 필드에 작성해주세요.**
+- 'individual_feedbacks'는 비어있는 객체 {{}}로 반환하거나, 특정 프로젝트별/섹션별 핵심 피드백이 있다면 해당 키로 넣어주세요.
+""")
+
+    else:
+        return system_instruction, f"오류: 알 수 없는 문서 타입 '{doc_type}'입니다."
+    
+    return system_instruction, "\n".join(user_prompt_parts)

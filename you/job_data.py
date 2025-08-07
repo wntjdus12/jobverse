@@ -149,45 +149,182 @@ JOB_DETAILS = {
 # doc_type: resume, cover_letter, portfolio, career_statement
 JOB_DOCUMENT_SCHEMAS = {
     "resume": {
-        "korean_name": "이력서", # 문서 유형의 한글 이름 추가
-        "sections": [ # 새로운 'sections' 키를 추가하여 UI 구성을 더 유연하게
+        "korean_name": "이력서",
+        "sections": [
             {
                 "title": "학력 사항",
                 "fields": [
-                    {"name": "education_history", "label": "학력", "type": "textarea", "placeholder": "최종 학력부터 고등학교까지 상세히 기재 (학교명, 전공, 기간, 학점 등)."},
+                    {
+                        "name": "education_highschool",
+                        "label": "고등학교",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "school_name", "label": "학교명", "type": "text", "placeholder": "학교명을 입력하세요.", "required": True},
+                            {"name": "start_date", "label": "입학 연월", "type": "date", "required": True},
+                            {"name": "end_date", "label": "졸업 연월", "type": "date", "required": True},
+                            {"name": "graduation_type", "label": "졸업 유형", "type": "select", "options": ["졸업", "검정고시", "재학"], "required": True}
+                        ]
+                    },
+                    {
+                        "name": "education_university",
+                        "label": "대학교",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "school_name", "label": "학교명", "type": "text", "placeholder": "학교명을 입력하세요.", "required": True},
+                            {"name": "start_date", "label": "입학 연월", "type": "date", "required": True},
+                            {"name": "end_date", "label": "졸업 연월", "type": "date", "required": True},
+                            {"name": "graduation_type", "label": "졸업 유형", "type": "select", "options": ["졸업", "졸업예정", "휴학", "수료"], "required": True},
+                            {"name": "enrollment_type", "label": "입학 유형", "type": "select", "options": ["수시", "정시", "편입", "재수"], "required": False},
+                            {"name": "degree", "label": "학위", "type": "text", "placeholder": "학위를 입력하세요.", "required": True},
+                            {"name": "major", "label": "전공", "type": "text", "placeholder": "전공을 입력하세요.", "required": True},
+                            {"name": "gpa", "label": "학점", "type": "number", "placeholder": "4.2", "required": False},
+                            {"name": "total_gpa", "label": "전체학점", "type": "number", "placeholder": "4.5", "required": False}
+                        ]
+                    },
+                    {
+                        "name": "education_graduate_school",
+                        "label": "대학원",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "school_name", "label": "학교명", "type": "text", "placeholder": "학교명을 입력하세요.", "required": True},
+                            {"name": "start_date", "label": "입학 연월", "type": "date", "required": True},
+                            {"name": "end_date", "label": "졸업 연월", "type": "date", "required": True},
+                            {"name": "graduation_type", "label": "졸업 유형", "type": "select", "options": ["졸업", "졸업예정", "수료"], "required": True},
+                            {"name": "degree", "label": "학위", "type": "text", "placeholder": "학위를 입력하세요.", "required": True},
+                            {"name": "major", "label": "전공", "type": "text", "placeholder": "전공을 입력하세요.", "required": True}
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "학내외 활동",
+                "fields": [
+                    {
+                        "name": "extracurricular_activities",
+                        "label": "학내외 활동",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "organization_name", "label": "활동단체명", "type": "text", "placeholder": "단체명을 입력하세요.", "required": True},
+                            {"name": "role", "label": "역할 및 지위", "type": "text", "placeholder": "역할을 입력하세요.", "required": False},
+                            {"name": "start_date", "label": "시작일", "type": "date", "required": True},
+                            {"name": "end_date", "label": "종료일", "type": "date", "required": True},
+                            {"name": "description", "label": "활동 내용", "type": "textarea", "placeholder": "활동 내용을 상세히 입력하세요.", "required": False}
+                        ]
+                    }
                 ]
             },
             {
                 "title": "경력 사항",
                 "fields": [
-                    {"name": "career_history", "label": "경력", "type": "textarea", "placeholder": "회사명, 직위, 재직 기간, 주요 업무 및 성과 (신입의 경우 프로젝트 경험 위주로 작성). 각 경력/프로젝트별로 역할, 사용 기술, 기여도, 결과(수치화)를 구체적으로 작성해주세요."},
+                    {
+                        "name": "career",
+                        "label": "경력",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "company_name", "label": "회사명", "type": "text", "placeholder": "회사명을 입력하세요.", "required": True},
+                            {"name": "department_name", "label": "부서명", "type": "text", "placeholder": "부서명을 입력하세요.", "required": False},
+                            {"name": "start_date", "label": "입사일", "type": "date", "required": True},
+                            {"name": "end_date", "label": "퇴사일", "type": "date", "required": True},
+                            {"name": "position", "label": "직급/직책", "type": "text", "placeholder": "직급을 입력하세요.", "required": True},
+                            {"name": "description", "label": "업무 내용", "type": "textarea", "placeholder": "담당 업무를 상세히 입력하세요.", "required": True},
+                            {"name": "employment_type", "label": "고용 형태", "type": "select", "options": ["정규직", "계약직", "인턴", "프리랜서"], "required": False},
+                            {"name": "reason_for_leaving", "label": "퇴직 사유", "type": "textarea", "placeholder": "퇴직 사유를 간략히 입력하세요.", "required": False}
+                        ]
+                    }
                 ]
             },
             {
-                "title": "자격증", # 자격증 섹션 추가
+                "title": "외국어",
                 "fields": [
-                    {"name": "certificates_list", "label": "보유 자격증", "type": "textarea", "placeholder": "취득 자격증을 모두 기재 (자격증명, 발행기관, 취득일). 직무 관련 자격증 우선 기재."},
+                    {
+                        "name": "foreign_language",
+                        "label": "외국어 능력",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "language", "label": "외국어", "type": "text", "placeholder": "영어를 입력하세요.", "required": True},
+                            {"name": "speaking_level", "label": "회화능력", "type": "select", "options": ["상", "중", "하"], "required": False},
+                            {"name": "writing_level", "label": "작문능력", "type": "select", "options": ["상", "중", "하"], "required": False},
+                            {"name": "reading_level", "label": "독해능력", "type": "select", "options": ["상", "중", "하"], "required": False},
+                            {"name": "exam_type", "label": "시험 종류", "type": "text", "placeholder": "TOEIC", "required": False},
+                            {"name": "score", "label": "점수/등급", "type": "text", "placeholder": "990", "required": False},
+                            {"name": "acquisition_date", "label": "취득일", "type": "date", "required": False}
+                        ]
+                    }
                 ]
             },
             {
-                "title": "수상 및 기타 활동",
+                "title": "자격증",
                 "fields": [
-                    {"name": "awards_activities", "label": "수상 내역 및 대외활동", "type": "textarea", "placeholder": "수상 내역, 대외활동, 동아리 활동 등을 작성하세요."},
+                    {
+                        "name": "certifications",
+                        "label": "자격증",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "certificate_name", "label": "자격증 이름", "type": "text", "placeholder": "정보처리기사", "required": True},
+                            {"name": "issuing_organization", "label": "발급기관", "type": "text", "placeholder": "한국산업인력공단", "required": False},
+                            {"name": "acquisition_date", "label": "취득일", "type": "date", "required": True},
+                            {"name": "expiration_date", "label": "만료일", "type": "date", "required": False}
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "수상 내역",
+                "fields": [
+                    {
+                        "name": "awards",
+                        "label": "수상 내역",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "award_name", "label": "수상/공모전", "type": "text", "placeholder": "공모전 이름", "required": True},
+                            {"name": "organizer", "label": "주최기관", "type": "text", "placeholder": "주최기관명", "required": False},
+                            {"name": "award_details", "label": "수상내역", "type": "text", "placeholder": "수상내역", "required": True},
+                            {"name": "award_date", "label": "수상일", "type": "date", "required": True}
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "교육 이수",
+                "fields": [
+                    {
+                        "name": "training",
+                        "label": "교육",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "training_name", "label": "교육명", "type": "text", "placeholder": "교육명을 입력하세요.", "required": True},
+                            {"name": "organizer", "label": "교육 기관", "type": "text", "placeholder": "기관명을 입력하세요.", "required": True},
+                            {"name": "start_date", "label": "시작일", "type": "date", "required": True},
+                            {"name": "end_date", "label": "종료일", "type": "date", "required": True},
+                            {"name": "description", "label": "교육 내용", "type": "textarea", "placeholder": "교육 내용을 상세히 입력하세요.", "required": False}
+                        ]
+                    }
                 ]
             },
             {
                 "title": "기술 스택",
                 "fields": [
-                    {"name": "skills_tech", "label": "보유 기술 스택", "type": "textarea", "placeholder": "활용 가능한 프로그래밍 언어, 프레임워크, 툴 등을 상세히 작성하세요."},
+                    {
+                        "name": "tech_stack",
+                        "label": "기술 스택",
+                        "type": "object_list",
+                        "fields": [
+                            {"name": "tech_name", "label": "기술명", "type": "text", "placeholder": "기술명을 입력하세요.", "required": True},
+                            {"name": "proficiency", "label": "능력", "type": "select", "options": ["상", "중", "하"], "required": False}
+                        ]
+                    }
                 ]
             }
         ]
     },
-    "cover_letter": { # 기존 자기소개서 스키마 유지 (필드명만 일관성 있게 수정)
+    "cover_letter": {
         "korean_name": "자기소개서",
         "fields": [
-            {"name": "motivation_expertise", "label": "해당 직무의 지원동기와 전문성을 기르기 위해 노력한 경험", "type": "textarea", "placeholder": "내용을 입력하세요."},
-            {"name": "collaboration_experience", "label": "공동의 목표를 위해 협업을 한 경험", "type": "textarea", "placeholder": "내용을 입력하세요."}
+            {"name": "reason_for_application", "label": "해당 직무에 지원한 이유", "type": "textarea", "placeholder": "내용을 입력하세요.", "required": True},
+            {"name": "expertise_experience", "label": "해당 분야에 대한 전문성을 기르기 위해 노력한 경험", "type": "textarea", "placeholder": "내용을 입력하세요.", "required": True},
+            {"name": "collaboration_experience", "label": "공동의 목표를 위해 협업을 한 경험", "type": "textarea", "placeholder": "내용을 입력하세요.", "required": True},
+            {"name": "challenging_goal_experience", "label": "도전적인 목표를 세우고 성취하기 위해 노력한 경험", "type": "textarea", "placeholder": "내용을 입력하세요.", "required": True},
+            {"name": "growth_process", "label": "자신의 성장과정", "type": "textarea", "placeholder": "내용을 입력하세요.", "required": True},
         ]
     },
     "portfolio": { # 기존 포트폴리오 스키마 유지
