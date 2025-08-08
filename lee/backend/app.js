@@ -23,8 +23,9 @@ app.use(cors({
 // JSON 본문 파싱
 app.use(express.json());
 
-// 라우터 등록
-app.use('/interview', interviewRoutes);
+
+// ✅ 라우터 등록
+app.use('/', interviewRoutes);
 app.use('/chatbot', chatbotRoutes);
 
 // 루트 응답

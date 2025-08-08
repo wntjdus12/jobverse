@@ -21,7 +21,7 @@ const Interview = () => {
     const [firstAnswer, setFirstAnswer] = useState('');
     const maxRounds = 8;
 
-    const BASE_URL = 'http://localhost:3000';
+    const BASE_URL = '';
     const interviewerIds = ['C', 'A', 'B'];
     const prevInterviewerRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -47,7 +47,7 @@ const Interview = () => {
         const { text, role } = ttsQueue.current.shift();
         isSpeaking.current = true;
         try {
-            const res = await fetch(`${BASE_URL}/interview/tts`, {
+            const res = await fetch(`${BASE_URL}/interview-api/tts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text, role })
@@ -147,7 +147,7 @@ const Interview = () => {
         const selected = getRandomInterviewer();
         setCurrentInterviewer(selected);
 
-        const res = await fetch(`${BASE_URL}/interview/start`, {
+        const res = await fetch(`${BASE_URL}/interview-api/start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
@@ -174,7 +174,7 @@ const Interview = () => {
             const next = getRandomInterviewer();
             setCurrentInterviewer(next);
 
-            await streamChatResponse(`${BASE_URL}/interview/chat`, {
+            await streamChatResponse(`${BASE_URL}/interview-api/chat`, {
                 message: userText,
                 role: next,
                 user: username,
@@ -209,7 +209,7 @@ const Interview = () => {
             formData.append('user', username);
 
             try {
-                const res = await fetch(`${BASE_URL}/interview/stt`, {
+                const res = await fetch(`${BASE_URL}/interview-api/stt`, {
                     method: 'POST',
                     body: formData
                 });

@@ -14,12 +14,6 @@ app.use(cors({
 app.use(express.json()); 
 app.use("/api", indexRouter);
 
-// ✅ 정적 파일 서빙
-app.use(express.static(path.join(__dirname, "public")));
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
 const mongoURI = 'mongodb://admin:admin123@3.39.202.109:27017/job?authSource=admin';
 
 mongoose.connect(mongoURI, {
