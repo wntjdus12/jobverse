@@ -24,7 +24,7 @@ app.use(cors({
 app.use(express.json());
 
 // ✅ 라우터 등록
-app.use('/interview', interviewRoutes);
+app.use('/', interviewRoutes);
 app.use('/chatbot', chatbotRoutes);
 
 // ✅ 루트 응답

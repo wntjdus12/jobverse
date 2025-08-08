@@ -1,8 +1,10 @@
 const express = require('express');
-const authController = require('../controllers/auth.controller');
 const router = express.Router();
+const profileController = require('../controllers/profile.controller');
+const authController = require('../controllers/auth.controller');
 
 router.post("/", authController.authenticate, profileController.upsertProfile);
-router.get("/me", authController.authenticate, profileController.getMyProfile);
 
-module.exports = router
+
+
+module.exports = router;
