@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react-swc'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/interview/',           // ★ 핵심: 자산 경로를 /interview/ 기준으로
+  base: '/interview',
   server: {
     host: '0.0.0.0',
     port: 8501,
