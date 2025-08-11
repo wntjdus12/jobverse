@@ -7,12 +7,12 @@ import gridfs
 
 
 
-client = MongoClient("mongodb://13.125.60.100:27017/")
-db = client["jobdescription"]       
+client = MongoClient("mongodb://admin:admin123@3.39.202.109:27017/job?authSource=admin")
+db = client["job"]       
 
-fs = gridfs.GridFS(db)   
+fs = gridfs.GridFS(db, collection="videos")   
 
-file_path = "../assets/backend_jobdescription.mp4"
+file_path = "./assets/backend.mp4"
 
 with open(file_path, "rb") as f:
     file_id = fs.put(f, filename="backend.mp4", content_type="video/mp4")
