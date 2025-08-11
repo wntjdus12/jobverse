@@ -1,4 +1,5 @@
 import GithubRepo from "./components/GithubRepo";
+import PortfolioLanding from "./components/PortfolioLanding";
 import PortfolioResult from "./components/PortfolioResult";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
@@ -7,7 +8,8 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<GithubRepo />} />
+          <Route path="/github" element={<GithubRepo />} />
+          <Route path="/portfolio-landing" element={<PortfolioLanding />} />
           <Route path="/portfolio-result" element={<PortfolioResult />} />
         </Routes>
       </BrowserRouter>
