@@ -34,9 +34,9 @@ app.add_middleware(
 )
 
 # --- MongoDB / GridFS 설정 ---
-mongo_client = MongoClient("mongodb://13.125.60.100:27017/")
-mongo_db = mongo_client["jobdescription"]
-fs = gridfs.GridFS(mongo_db)
+mongo_client = MongoClient("mongodb://admin:admin123@3.39.202.109:27017/job?authSource=admin")
+mongo_db = mongo_client["job"]  # 기존 회원정보도 들어있는 job DB 그대로 사용
+fs = gridfs.GridFS(mongo_db, collection="videos")  # 버킷명 videos → videos.files / videos.chunks 생성
 
 def iterfile(grid_out, chunk_size=1024 * 1024):
     while True:
@@ -48,11 +48,13 @@ def iterfile(grid_out, chunk_size=1024 * 1024):
 @app.get("/video/{file_id}")
 def stream_video(file_id: str):
     try:
-        oid = ObjectId(file_id)
-        grid_out = fs.get(oid)
-        return StreamingResponse(iterfile(grid_out), media_type="video/mp4")
+        grid_out = fs.get(ObjectId(file_id))
+        return StreamingResponse(
+            iterfile(grid_out),
+            media_type=grid_out.content_type or "video/mp4",
+        )
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid or missing video file")
+        raise HTTPException(status_code=404, detail="파일이 없거나 잘못된 ID입니다.")
 
 # --- GitHub / OpenAI 관련 ---
 def github_headers():
