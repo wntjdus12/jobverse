@@ -1,0 +1,127 @@
+/* CardNewsSection.css */
+.card-news-section-new {
+  padding: 80px 0;
+  background-color: #e9f1f8;
+}
+
+.card-news-container-new {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* [추가] 섹션 제목 스타일 */
+.section-title-new {
+  font-size: 2.8rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 4rem; /* 제목과 카드 사이의 간격 */
+  color: #212529;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; 
+  gap: 2.5rem;
+}
+
+.info-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- 왼쪽 카드 스타일 --- */
+.left-card {
+  padding: 3rem;
+}
+
+.left-card-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.left-card-text h3 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.left-card-text p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #555;
+  margin: 0;
+}
+
+.logo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 3rem;
+  color: #868e96;
+}
+
+.logo-grid-title {
+  font-size : 0.9rem;
+  font-weight: 600;
+  color: #868e96;
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+/* --- 오른쪽 카드 스타일 --- */
+.right-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.right-card-image-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.right-card-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.right-card-content {
+  padding: 2.5rem;
+}
+
+.right-card-content h3 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.right-card-content p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #555;
+  margin: 0 0 2rem 0;
+}
+
+.resource-links a {
+  display: block;
+  margin-bottom: 1rem;
+  color: #5865F2;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.resource-links a:hover {
+  transform: translateX(5px);
+}
+
+.resource-links a:last-child {
+  margin-bottom: 0;
+}

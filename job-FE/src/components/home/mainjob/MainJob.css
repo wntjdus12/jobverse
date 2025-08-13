@@ -1,0 +1,239 @@
+/* MainJob.css */
+
+/* --- 기본 설정 --- */
+.main-header {
+  /* [수정] position: fixed가 중요합니다. */
+  position: fixed; 
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 3rem;
+  /* [수정] 헤더가 다른 모든 요소 위에 올 수 있도록 z-index를 높게 설정합니다. */
+  z-index: 10000;
+  transition: background-color 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+.main-header.scrolled {
+  background-color: rgba(17, 17, 17, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.main-header nav {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+}
+
+.main-header nav a {
+  margin: 0;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  opacity: 0.9;
+  transition: opacity 0.2s;
+}
+.main-header nav a:hover {
+  opacity: 1;
+}
+
+.play-button {
+  background-color: #5865F2;
+  color: #fff;
+  border: none;
+  padding: 0.8rem 1.8rem;
+  border-radius: 5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.play-button:hover {
+  transform: scale(1.05);
+}
+
+/* --- 메인 컨테이너 --- */
+.main-job-container {
+  height: 100vh;
+  /* [수정] position: relative와 z-index를 추가하여 쌓임 순서를 명확히 합니다. */
+  position: relative;
+  z-index: 1; /* 헤더(100)보다 명백히 낮은 값 */
+  color: #fff;
+}
+
+.sticky-content {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.video-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.background-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content-overlay {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(0deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.5) 100%);
+}
+
+.tagline {
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  letter-spacing: 1px;
+  color: #a58dcd ;
+}
+
+.main-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10vw;
+  font-weight: 900;
+  letter-spacing: -2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  line-height: 1;
+}
+
+.description {
+  margin-top: 2rem;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  max-width: 600px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.scroll-down-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.mouse-icon {
+  width: 24px;
+  height: 40px;
+  border: 2px solid #fff;
+  border-radius: 12px;
+  position: relative;
+}
+
+.wheel {
+  width: 4px;
+  height: 8px;
+  background-color: #fff;
+  border-radius: 2px;
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: scroll-wheel 1.5s infinite;
+}
+
+@keyframes scroll-wheel {
+  0% { top: 8px; opacity: 1; }
+  100% { top: 20px; opacity: 0; }
+}
+
+
+/* --- 드롭다운 메뉴 스타일 --- */
+.dropdown-container {
+  position: relative;
+}
+
+.nav-dropdown-toggle {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  opacity: 0.9;
+  transition: opacity 0.2s;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.nav-dropdown-toggle:hover {
+  opacity: 1;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 1rem;
+  width: 180px;
+  background-color: rgba(30, 33, 40, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: fade-in 0.3s ease-out;
+  z-index: 7000;
+  /* z-index는 부모인 헤더의 z-index를 따라가므로 사실상 불필요합니다. */
+  /* 하지만 명확성을 위해 유지해도 좋습니다. */
+}
+
+.dropdown-item {
+  padding: 0.8rem 1.2rem;
+  font-size: 0.95rem;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  text-align: left;
+  z-index: 7000;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: rgba(255,255,255,0.08);
+  outline: none;
+  color: #ffffff;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 const MyPage = () => {
   const [profile, setProfile] = useState({
@@ -19,22 +20,55 @@ const MyPage = () => {
     awards: [{ title: '', content: '' }],
     certificates: ['']
   });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
 
   useEffect(() => {
-    const user = JSON.parse(sessionStorage.getItem("user"));
-    if (user) {
-      setProfile((prev) => ({
+    const init = async () => {
+      try {
+      const user = JSON.parse(sessionStorage.getItem("user"));
+      setProfile(prev => ({
         ...prev,
-        nickname: user.name,
-        email: user.email,
-      }));
+        nickname: user?.name || prev.nickname,
+        email: user?.email || prev.email,
+      }))
+
+      const token = sessionStorage.getItem("token");
+      if (!token) throw new Error("로그인이 필요합니다.")
+
+      const { data } = await axios.get('/api/profile/me', {
+        headers: { Authorization: `Bearer ${token}`}
+      });
+      // 서버에서 온 값으로 상태 세팅 
+      setProfile({
+        photo: data.photo || '',
+        nickname: data.nickname || user?.name || '',
+        email: data.email || user?.email || '',
+        phone: data.phone || '',
+        intro: data.intro || '',
+        education : ( data.education && data.education.length ? data.education : [{level: '', status:'', school: '', major: ''}]),
+        activities: (data.activities && data.activities.length ? data.activities : [{title: '', content: ''}]),
+        awards: (data.awards && data.awards.length ? data.awards : [{title: '', content: ''}]),
+        certificates: (data.certificates && data.certificates.length ? data.certificates : [''] )
+      })
+
+    } catch(error) {
+      //프로필이 아직 없으면 기본값 유지
+      // 다른 에러면 콘솔만 
+      console.warn("프로필 불러오기 : ", error?.response?.status || error.message)
+    } finally {
+      setLoading(false);
     }
-  }, []);
+    };
+    init()
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'photo') {
-      const file = files[0];
+      const file = files?.[0];
+      if (!file) return;
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfile(prev => ({ ...prev, photo: reader.result }));
@@ -80,13 +114,36 @@ const MyPage = () => {
     setProfile({ ...profile, certificates: [...profile.certificates, ''] });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('프로필 정보가 저장되었습니다.');
+    try {
+      const token = sessionStorage.getItem("token");
+      if (!token) return alert("로그인이 필요합니다");
+
+      setSaving(true);
+      await axios.post('/api/profile', profile, {
+        headers: { Authorization: `Bearer ${token}`}
+      })
+      alert('프로필 정보가 저장되었습니다.')
+    } catch (error) {
+      console.error('프로필 저장 실패: ', error);
+      alert('저장 중 오류가 발생했습니다.');
+    } finally {
+      setSaving(false);
+    }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-700">
+        프로필을 불러오는 중 ...
+      </div>
+
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-1 to-indigo-100 py-12 px-4">
       <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-10">
         <h1 className="text-3xl font-extrabold text-center mb-8 text-purple-600">
           {profile.nickname ? `${profile.nickname}님, 반가워요 👋` : "내 프로필"}
@@ -212,9 +269,10 @@ const MyPage = () => {
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 rounded-lg shadow-md hover:brightness-110 transition"
+            disabled={saving}
+            className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 rounded-lg shadow-md hover:brightness-110 transition disabled:opacity-60"
           >
-            저장하기
+            {saving ? '저장 중 ...' : '저장하기' }
           </button>
         </form>
       </div>

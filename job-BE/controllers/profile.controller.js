@@ -1,23 +1,46 @@
 const Profile = require("../models/Profile");
 
-exports.getMyProfile = async (req, res) => {
-  try {
-    const profile = await Profile.findOne({ user: req.userId });
-    res.json(profile);
+const profileController = {}
+
+profileController.upsertProfile = async ( req, res ) => {
+  try { 
+    const userId = req.userId;
+
+    const profileData = {
+      ...req.body,
+      user : userId
+    }
+
+    const updatedProfile = await Profile.findOneAndUpdate(
+      {user: userId},
+      profileData,
+      { new: true , upsert: true, setDefaultsOnInsert: true}
+    );
+    res.status(200).json(updatedProfile)
   } catch (error) {
-    res.status(500).json({ message: "Server Error" });
+    console.error('프로필 저장 실패:', error);
+    res.status(500).json({message: '프로필 저장 중 오류 발생'})
   }
 };
 
-exports.upsertProfile = async (req, res) => {
+profileController.getMyProfile = async (req, res) => {
   try {
-    const updatedProfile = await Profile.findOneAndUpdate(
-      { user: req.userId },
-      { ...req.body, user: req.userId },
-      { new: true, upsert: true }
-    );
-    res.json(updatedProfile);
-  } catch (error) {
-    res.status(500).json({ message: "Server Error" });
+    const userId = req.userId;
+
+    const profile = await Profile.findOne({ user: userId });
+
+    if (!profile) {
+      return res.status(404).json({ message: '프로필이 존재하지 않습니다.'})
+    }
+
+    res.status(200).json(profile);
+
+  }catch (error) {
+    console.error('프로필 조회 실패:', error)
+    res.status(500).json({ message: '프로필 조회 중 오류 발생'});
   }
-};
+}
+
+
+module.exports = profileController
+

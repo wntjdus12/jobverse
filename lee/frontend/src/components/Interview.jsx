@@ -18,6 +18,7 @@ const Interview = () => {
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [round, setRound] = useState(0);
+<<<<<<< HEAD
   const [sessionId, setSessionId] = useState(null);
 
   const BASE_URL = 'http://localhost:3000';
@@ -36,6 +37,44 @@ const Interview = () => {
     A: { name: '인사팀', image: interviewerA },
     B: { name: '기술팀', image: interviewerB },
     C: { name: '실무 팀장', image: interviewerC },
+=======
+  const [firstAnswer, setFirstAnswer] = useState('');
+  const maxRounds = 8;
+
+  // ✅ Nginx 프록시 경로 + 백엔드의 /interview 마운트 반영
+  // 만약 백엔드를 루트로 마운트(app.use('/', interviewRoutes))로 바꾸면 아래를 '/interview-api' 로만 바꿔주면 됨.
+  const BASE_URL = '/interview-api';
+
+  const interviewerIds = ['C', 'A', 'B'];
+  const prevInterviewerRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const audioRef = useRef(null);
+  const ttsQueue = useRef([]);
+  const isSpeaking = useRef(false);
+
+  const interviewerInfo = {
+    A: { name: '인사팀', image: interviewerA },
+    B: { name: '기술팀', image: interviewerB },
+    C: { name: '실무 팀장', image: interviewerC },
+  };
+
+  const getRandomInterviewer = () => {
+    const filtered = interviewerIds.filter(id => id !== prevInterviewerRef.current);
+    const selected = filtered[Math.floor(Math.random() * filtered.length)];
+    prevInterviewerRef.current = selected;
+    return selected;
+  };
+
+  // 공통 fetch 래퍼 (실패 시 콘솔에 자세히)
+  const safeFetch = async (url, options) => {
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      console.error('❌ Fetch fail:', res.status, url, t);
+      throw new Error(`HTTP ${res.status} on ${url}`);
+    }
+    return res;
+>>>>>>> origin/main
   };
 
   const playNextInQueue = async () => {
@@ -43,9 +82,15 @@ const Interview = () => {
     const { text, role } = ttsQueue.current.shift();
     isSpeaking.current = true;
     try {
+<<<<<<< HEAD
       const res = await fetch(`${BASE_URL}/interview/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...AUTH },
+=======
+      const res = await safeFetch(`${BASE_URL}/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+>>>>>>> origin/main
         body: JSON.stringify({ text, role })
       });
       const blob = await res.blob();
@@ -56,8 +101,17 @@ const Interview = () => {
         audioRef.current.pause();
         URL.revokeObjectURL(audioRef.current.src);
       }
+<<<<<<< HEAD
       audioRef.current = audio;
       audio.onended = () => { isSpeaking.current = false; playNextInQueue(); };
+=======
+
+      audioRef.current = audio;
+      audio.onended = () => {
+        isSpeaking.current = false;
+        playNextInQueue();
+      };
+>>>>>>> origin/main
       audio.play().catch(console.warn);
     } catch (err) {
       console.error('🔈 TTS 재생 오류:', err);
@@ -65,6 +119,7 @@ const Interview = () => {
     }
   };
 
+<<<<<<< HEAD
   // 서버가 고른 면접관 헤더를 사용해 스트리밍 수신
   const streamChatResponse = async (payload) => {
     try {
@@ -77,12 +132,25 @@ const Interview = () => {
 
       const interviewerKey = res.headers.get('interviewer') || 'A';
       setCurrentInterviewer(interviewerKey);
+=======
+  const streamChatResponse = async (url, payload, interviewerKey) => {
+    try {
+      const res = await safeFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.body) throw new Error("응답 스트림 없음");
+>>>>>>> origin/main
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '', fullText = '', sentenceBuffer = '';
 
+<<<<<<< HEAD
       // 면접관 메시지 자리 추가
+=======
+>>>>>>> origin/main
       setChat(prev => [...prev, { sender: interviewerKey, text: '' }]);
 
       while (true) {
@@ -136,6 +204,7 @@ const Interview = () => {
     }
   };
 
+<<<<<<< HEAD
   // 면접 시작
   const pickFirstInterviewer = async (nameParam = null) => {
     const name = nameParam || username;
@@ -213,6 +282,76 @@ const Interview = () => {
         const res = await fetch(`${BASE_URL}/interview/stt`, {
           method: 'POST',
           headers: { ...AUTH }, // FormData는 Content-Type 자동
+=======
+  const pickFirstInterviewer = async (nameParam = null) => {
+    const name = nameParam || username;
+    const selected = getRandomInterviewer();
+    setCurrentInterviewer(selected);
+
+    const res = await safeFetch(`${BASE_URL}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    const { question } = data;
+
+    setChat([{ sender: selected, text: question }]);
+    ttsQueue.current.push({ text: question, role: selected });
+    playNextInQueue();
+    setRound(1);
+  };
+
+  const handleUserSubmit = async () => {
+    if (!input.trim()) return;
+
+    const userText = input.trim();
+    setChat(prev => [...prev, { sender: 'user', text: userText }]);
+    setInput('');
+
+    if (round === 1) setFirstAnswer(userText);
+
+    if (round < maxRounds) {
+      const next = getRandomInterviewer();
+      setCurrentInterviewer(next);
+
+      await streamChatResponse(`${BASE_URL}/chat`, {
+        message: userText,
+        role: next,
+        user: username,
+        profile_summary: round === 1 ? userText : firstAnswer,
+        job: jobRole
+      }, next);
+
+      setRound(prev => prev + 1);
+    } else {
+      setTimeout(() => setShowEndModal(true), 500);
+    }
+  };
+
+  const handleStartRecording = async () => {
+    if (isRecording && mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      return;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+    setMediaRecorder(recorder);
+    audioChunksRef.current = [];
+    setIsRecording(true);
+
+    recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+    recorder.onstop = async () => {
+      const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      const formData = new FormData();
+      formData.append('file', blob, 'recording.webm');
+      formData.append('user', username);
+
+      try {
+        const res = await safeFetch(`${BASE_URL}/stt`, {
+          method: 'POST',
+>>>>>>> origin/main
           body: formData
         });
         const data = await res.json();
@@ -237,6 +376,7 @@ const Interview = () => {
     window.location.href = '/';
   };
 
+<<<<<<< HEAD
   const hasInterviewerMsg = chat.some(m => m.sender !== 'user');
 
   return (
@@ -280,6 +420,46 @@ const Interview = () => {
           <button onClick={handleStartRecording}>{isRecording ? '🛑' : '🎤'}</button>
           <button onClick={handleUserSubmit}>📤</button>
         </div>
+=======
+  return (
+    <div className="interview-fullscreen">
+      {showModal && <Modal onSubmit={handleNameSubmit} />}
+      {showEndModal && <EndModal onClose={handleInterviewEnd} />}
+
+      <div className="interviewers">
+        {interviewerIds.map((id) => (
+          <div key={id} className={`interviewer-card ${currentInterviewer === id ? 'active' : ''}`}>
+            <img src={interviewerInfo[id].image} alt={interviewerInfo[id].name} />
+            <p>{interviewerInfo[id].name}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="question-display">
+        {chat
+          .filter(msg => msg.sender !== 'user')
+          .slice(-1)
+          .map((msg, idx) => (
+            <div key={idx} className="question-msg">
+              <strong>{interviewerInfo[msg.sender]?.name}:</strong> {msg.text}
+            </div>
+          ))}
+      </div>
+
+      <div className="user-bottom">
+        <img src={userProfile} alt="지원자" className="user-card" />
+        <div className="user-input-box">
+          <input
+            type="text"
+            placeholder="답변을 입력하세요"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleUserSubmit()}
+          />
+          <button onClick={handleStartRecording}>{isRecording ? '🛑' : '🎤'}</button>
+          <button onClick={handleUserSubmit}>📤</button>
+        </div>
+>>>>>>> origin/main
       </div>
     </div>
   );

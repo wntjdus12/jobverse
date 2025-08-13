@@ -1,0 +1,172 @@
+/* ScrollSection.css */
+.scroll-section {
+  position: relative;
+  width: 100%;
+  padding: 100px 0;
+  background-color: #f4f7f9; /* SVG 로딩 실패 시 보일 배경색 */
+  overflow: hidden; /* 자식 요소가 넘치는 것을 방지 */
+}
+
+/* 물결 배경 스타일 */
+.wavy-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%; 
+  z-index: 1;
+  /* 직접 만든 물결 SVG 배경 */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3e%3cpath fill='%23e8f5e9' fill-opacity='1' d='M0,192L80,176C160,160,320,128,480,133.3C640,139,800,181,960,186.7C1120,192,1280,160,1360,144L1440,128L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z'%3e%3c/path%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: top;
+  background-size: cover;
+}
+
+.section-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.scroll-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+
+.title-dots {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: #4caf50;
+  border-radius: 50%;
+  margin-right: 3rem;
+  position: relative;
+  box-shadow: 18px 0 0 #4caf50, 36px 0 0 #4caf50;
+}
+
+.section-main-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #2e3d49;
+  display: flex;
+  align-items: center;
+  
+}
+
+.section-subtitle {
+  font-size: 1.1rem;
+  color: #5c6a74;
+  margin-top: 0.5rem;
+}
+
+.see-more-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #fff;
+  border: 1px solid #dbe2e8;
+  color: #333;
+  padding: 0.8rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.see-more-button:hover {
+  background-color: #4caf50;
+  color: #fff;
+  border-color: #4caf50;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* 가로 스크롤 컨테이너 */
+.card-scroll-container {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto; /* 가로 스크롤 활성화 */
+  overflow-y: hidden;
+  padding: 1rem 0 2rem 0; /* 카드 그림자와 스크롤바 공간 확보 */
+  -ms-overflow-style: none; /* IE, Edge */
+  scrollbar-width: none; /* Firefox */
+  scroll-snap-type: x mandatory; /* 스크롤 시 카드에 딱 맞게 멈추는 효과 */
+}
+/* Chrome, Safari, Opera */
+.card-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* 뉴스 카드 스타일 */
+.news-card {
+  flex: 0 0 320px; /* 카드의 너비를 320px로 고정 */
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  scroll-snap-align: start; /* 스크롤 스냅 시작 지점 */
+}
+
+.card-image-container {
+  position: relative;
+  width: 100%;
+  height: 180px;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-tag {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background-color: #4caf50;
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.card-content {
+  padding: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-date {
+  font-size: 0.9rem;
+  color: #88949e;
+  margin-bottom: 0.5rem;
+}
+
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2e3d49;
+  line-height: 1.4;
+  flex-grow: 1; /* 제목이 길어져도 레이아웃 유지 */
+  margin: 0;
+}
+
+.card-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #4caf50;
+  font-weight: 600;
+  text-decoration: none;
+  align-self: flex-start; /* 링크를 왼쪽 정렬 */
+  margin: 15px;
+}

@@ -41,7 +41,7 @@ const JobSelector = ({ onSelect }) => {
               <button
                 key={key}
                 className="job-button"
-                onClick={() => onSelect(category, key)}
+                onClick={() => onSelect(category, key, label)}
               >
                 {label}
               </button>

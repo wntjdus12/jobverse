@@ -245,6 +245,7 @@ router.post('/chat', async (req, res, next) => {
       res.end();
     });
 
+<<<<<<< HEAD
     stream.data.on('error', (err) => {
       console.error('Dify stream error:', err);
       if (!res.headersSent) res.status(500).json({ error: 'Dify 스트림 오류' });
@@ -253,6 +254,38 @@ router.post('/chat', async (req, res, next) => {
   } catch (e) {
     next(e);
   }
+=======
+        response.data.on('end', async () => {
+            if (await isDuplicateQuestion(name, fullQuestion)) {
+                console.warn('⚠️ 중복 질문:', fullQuestion);
+            } else {
+                await saveQuestion(name, fullQuestion);
+            }
+ 
+            sessionStore[name].round += 1;
+            res.write('data: [DONE]\n\n');
+            res.end();
+        });
+
+        response.data.on('error', (err) => {
+            console.error('❌ 스트림 오류:', err);
+            res.end();
+        });
+
+    } catch (error) {
+        console.error("❌ Dify API 오류:", error.message);
+        res.status(500).json({ error: 'Dify API 호출 실패', detail: error.message });
+    }
+};
+
+router.post('/chat', async (req, res) => {
+    const { message, user, job, profile_summary } = req.body;
+    if (!message?.trim() || !user?.trim()) {
+        return res.status(422).json({ error: "message, user는 필수입니다." });
+    }
+    await saveAnswer(user, message);
+    await handleStreaming({ name: user, job, message, profileSummary: profile_summary, res });
+>>>>>>> origin/main
 });
 
 // -------------------- [3] 텍스트 → 음성 --------------------
