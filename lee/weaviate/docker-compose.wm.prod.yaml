@@ -1,0 +1,19 @@
+services:
+  weaviate:
+    image: semitechnologies/weaviate:1.25.3
+    restart: unless-stopped
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      ENABLE_MODULES: text2vec-openai
+    volumes:
+      - weaviate-prod-data:/var/lib/weaviate
+    networks: [jobverse-net]          # 백엔드 compose도 같은 네트워크 사용
+
+networks:
+  jobverse-net:
+    external: true                    # 최초 1회: docker network create jobverse-net
+
+volumes:
+  weaviate-prod-data:
