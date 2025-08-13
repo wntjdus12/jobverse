@@ -24,10 +24,10 @@ import {
 import { renderFormFields } from "./formRenderer.js";
 
 /**
- * 다이어그램 노드 클릭 이벤트를 설정합니다.
+ * 다이어그램 노드 클릭 이벤트 설정
  */
 export function setupNodeClickEvents() {
-  // 롤백 버튼 이벤트 리스너
+  // 롤백 버튼
   document.querySelectorAll(".rollback-button").forEach((button) => {
     button.onclick = (e) => {
       e.stopPropagation();
@@ -37,6 +37,7 @@ export function setupNodeClickEvents() {
     };
   });
 
+  // 노드 클릭
   document.querySelectorAll(".diagram-node").forEach((node) => {
     node.onclick = async (e) => {
       const clickedNode = e.target.closest(".diagram-node");
@@ -46,10 +47,7 @@ export function setupNodeClickEvents() {
         openCompanyModal();
         return;
       }
-
-      if (!clickedNode.classList.contains("document-node")) {
-        return;
-      }
+      if (!clickedNode.classList.contains("document-node")) return;
 
       const version = parseInt(clickedNode.dataset.version, 10);
       setCurrentDocInfo(docType, version);
@@ -63,14 +61,14 @@ export function setupNodeClickEvents() {
             .toLowerCase()}`
         )
           .then((res) => {
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-            }
+            if (!res.ok) throw new Error(`서버 응답 오류: ${res.status}`);
             return res.json();
           })
           .catch((error) => {
             console.error("Error fetching form schema:", error);
-            alert("문서 스키마를 불러오는 데 실패했습니다. 콘솔을 확인하세요.");
+            alert(
+              "문서 스키마를 불러오는 데 실패했습니다. 네트워크나 서버 상태를 확인하세요."
+            );
             editModal.style.display = "none";
             return null;
           });
@@ -93,11 +91,13 @@ export function setupNodeClickEvents() {
           `${clickedNode.dataset.koreanName} 편집 (v${version})`,
           savedFeedback,
           individualFeedbacks,
-          docType
+          docType // 포트폴리오 포함 개별 피드백 표시 가능
         );
       } catch (error) {
         console.error("An error occurred during node click event:", error);
-        alert("문서 편집기를 여는 중 오류가 발생했습니다. 콘솔을 확인하세요.");
+        alert(
+          "문서 편집기를 여는 중 오류가 발생했습니다. 네트워크나 서버를 확인하세요."
+        );
         editModal.style.display = "none";
       } finally {
         showLoading(false);
@@ -107,7 +107,7 @@ export function setupNodeClickEvents() {
 }
 
 /**
- * 다이어그램 그리기 함수 (수정됨)
+ * 다이어그램 그리기
  */
 export function drawDiagram() {
   diagramContainer.innerHTML = "";
@@ -171,92 +171,71 @@ export function drawDiagram() {
   setupNodeClickEvents();
 }
 
-function getKoreanNameForDisplay(docType) {
-  switch (docType) {
-    case "resume":
-      return "이력서";
-    case "cover_letter":
-      return "자기소개서";
-    case "portfolio":
-      return "포트폴리오";
-    case "company":
-      return "기업";
-    default:
-      return docType;
-  }
-}
-
-// rollbackDocument 함수는 변경사항이 없으므로, 원본 그대로 유지됩니다.
-
-// 문서 되돌리기 함수 (선택된 버전으로 되돌림)
+/**
+ * 문서 되돌리기
+ */
 export async function rollbackDocument(docType, versionToRollback) {
   const docName = documentData[docType][0]
     ? documentData[docType][0].koreanName
-    : docType; // v0 노드의 한글 이름 사용
+    : docType;
 
-  if (
-    confirm(`${docName}를 v${versionToRollback} 버전으로 되돌리시겠습니까?`)
-  ) {
-    // 1. 클라이언트 측 documentData 업데이트 (버전 잘라내기)
-    truncateDocumentVersions(docType, versionToRollback);
+  if (!confirm(`${docName}를 v${versionToRollback} 버전으로 되돌리시겠습니까?`))
+    return;
 
-    // 2. 서버에 삭제 요청
-    showLoading(true, "데이터베이스 롤백 중...");
-    try {
-      const response = await fetch(
-        `/api/rollback_document/${docType}/${jobTitle
-          .replace(/ /g, "-")
-          .replace(/\//g, "-")
-          .toLowerCase()}/${versionToRollback}`,
-        {
-          method: "DELETE",
-        }
-      );
-      if (!response.ok) {
-        const errorResult = await response.json();
-        throw new Error(errorResult.detail || "서버 롤백 실패");
-      }
-      alert(`${docName}가 v${versionToRollback} 버전으로 되돌려졌습니다.`);
-    } catch (error) {
-      console.error("Rollback API error:", error);
-      alert(`롤백 중 오류가 발생했습니다: ${error.message}`);
-      // If DB rollback fails, client-side data might be inconsistent with DB.
-      // For robustness, could reload from DB here or prompt user.
-    } finally {
-      showLoading(false);
+  truncateDocumentVersions(docType, versionToRollback);
+
+  showLoading(true, "데이터베이스 롤백 중...");
+  try {
+    const response = await fetch(
+      `/api/rollback_document/${docType}/${jobTitle
+        .replace(/ /g, "-")
+        .replace(/\//g, "-")
+        .toLowerCase()}/${versionToRollback}`,
+      { method: "DELETE" }
+    );
+    if (!response.ok) {
+      const errorResult = await response.json();
+      throw new Error(errorResult.detail || "서버 롤백 실패");
     }
+    alert(`${docName}가 v${versionToRollback} 버전으로 되돌려졌습니다.`);
+  } catch (error) {
+    console.error("Rollback API error:", error);
+    alert(`롤백 중 오류: ${error.message}`);
+  } finally {
+    showLoading(false);
+  }
 
-    setCurrentDocInfo(docType, versionToRollback);
+  setCurrentDocInfo(docType, versionToRollback);
 
-    drawDiagram(); // 다이어그램 다시 그리기
-
-    // 만약 현재 모달이 열려있고, 되돌려진 문서 타입과 같다면 모달 내용 업데이트
-    if (editModal.style.display === "block" && currentDocType === docType) {
-      const versionData = getDocumentVersionData(docType, versionToRollback); // 되돌려진 버전의 데이터 다시 로드
-      if (versionData) {
-        fetch(
+  // 모달 먼저 갱신
+  if (editModal.style.display === "block" && currentDocType === docType) {
+    const versionData = getDocumentVersionData(docType, versionToRollback);
+    if (versionData) {
+      try {
+        const schema = await fetch(
           `/api/document_schema/${currentDocType}?job_slug=${jobTitle
             .replace(/ /g, "-")
             .toLowerCase()}`
-        )
-          .then((res) => res.json())
-          .then((schema) => renderFormFields(schema, versionData.content))
-          .catch((error) =>
-            console.error("Error fetching schema on rollback:", error)
-          );
-        // ⭐️ setAiFeedback 호출 시 개별 피드백과 문서 타입도 함께 전달
+        ).then((res) => res.json());
+
+        renderFormFields(schema, versionData.content);
         setAiFeedback(
           versionData.feedback || "",
-          versionData.individual_feedbacks || {}, // ⭐️ 개별 피드백 전달
-          docType // ⭐️ 문서 타입 전달
+          versionData.individual_feedbacks || {},
+          docType // 포트폴리오 포함
         );
         setModalTitle(
           `${versionData.koreanName} 편집 (v${versionData.version})`
         );
-      } else {
-        editModal.style.display = "none";
-        alert("문서가 초기화되어 현재 편집 중인 내용이 없습니다.");
+      } catch (err) {
+        console.error("Error fetching schema on rollback:", err);
       }
+    } else {
+      editModal.style.display = "none";
+      alert("문서가 초기화되어 현재 편집 중인 내용이 없습니다.");
     }
   }
+
+  // 모달 갱신 후 다이어그램 다시 그림
+  drawDiagram();
 }
