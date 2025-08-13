@@ -55,6 +55,7 @@ const Header = () => {
         {/* 네비게이션 */}
         <nav className="hidden md:flex gap-8 text-gray-800 font-medium items-center relative z-50">
           {/* 마이페이지 */}
+          {/* AI 면접 (드롭다운 토글) */}
           <a
             href="#intro"
             style={{ textDecoration: "none", color: "#bf84ff" }}
@@ -66,51 +67,49 @@ const Header = () => {
           >
             마이페이지
           </a>
-
-          {/* 드롭다운 메뉴 */}
-          <div className="relative" ref={dropdownRef}>
-            <div
-              className="cursor-pointer text-purple-600 font-semibold hover:text-purple-800 transition flex items-center gap-1"
-              onClick={() => setDropdownOpen((prev) => !prev)}
-            >
-              AI 면접
-              <span className="text-sm">
-                {dropdownOpen ? "▲" : "▼"}
-              </span>
-            </div>
-
-            {dropdownOpen && (
-              <div className="absolute left-0 top-full mt-3 w-40 bg-white border border-gray-200 rounded-xl shadow-2xl z-[999] overflow-hidden animate-fade-in">
-                <div
-                  onClick={() => {
-                    navigate("/ai-interview");
-                    setDropdownOpen(false);
-                  }}
-                  className="px-3 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 cursor-pointer"
-                >
-                  AI 면접 보기
-                </div>
-                <div
-                  onClick={() => {
-                    navigate("/ai-report");
-                    setDropdownOpen(false);
-                  }}
-                  className="px-3 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 cursor-pointer"
-                >
-                  분석 리포트 보기
-                </div>
-              </div>
-            )}
+        <div className="relative" ref={dropdownRef}>
+          <div
+            style={{ textDecoration: "none", color: "#bf84ff" }} // ✅ 마이페이지와 동일
+            className="hover:text-purple-600 transition font-medium" // ✅ 동일한 클래스
+            onClick={() => setDropdownOpen((prev) => !prev)}
+          >
+            AI 면접
+            <span className="text-sm">{dropdownOpen ? "▲" : "▼"}</span>
           </div>
 
-          {/* 로그아웃 */}
+          {dropdownOpen && (
+            <div className="absolute left-0 top-full mt-3 w-40 bg-white border border-gray-200 rounded-xl shadow-2xl z-[999] overflow-hidden animate-fade-in">
+              <div
+                onClick={() => {
+                  window.location.href = "https://jobverse.site/interview/";
+                  setDropdownOpen(false);
+                }}
+                className="px-3 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 cursor-pointer"
+              >
+                가상 면접
+              </div>
+              <div
+                onClick={() => {
+                  navigate("/ai-report");
+                  setDropdownOpen(false);
+                }}
+                className="px-3 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 cursor-pointer"
+              >
+                분석 리포트 보기
+              </div>
+            </div>
+          )}
+        </div>
+
+          {/* AI 취업 코칭 */}
           <a
             href="#logout"
-            style={{ textDecoration: "none", color: "#bf84ff" }}
-            className="hover:text-purple-600 transition"
+            style={{ textDecoration: "none", color: "#bf84ff" }} // ✅ 마이페이지와 동일
+            className="hover:text-purple-600 transition font-medium" // ✅ 동일한 클래스
           >
-            로그아웃
+            AI 취업 코칭
           </a>
+
 
           {/* 사용자 이니셜 */}
           {nickname && (

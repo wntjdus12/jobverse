@@ -1,0 +1,178 @@
+/* NewsletterSection.css */
+.newsletter-section {
+  padding: 120px 0;
+  background-color: #f0f2f5; /* 밝은 회색 배경 */
+  position: relative;
+  overflow: hidden;
+}
+
+.newsletter-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 55% 45%;
+  align-items: center;
+  gap: 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.form-column {
+  padding-right: 3rem;
+}
+
+.newsletter-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1.4;
+  margin-bottom: 2.5rem;
+  color: #1a222a;
+}
+
+.newsletter-title .title-highlight {
+  color: #5865F2; /* 포인트 컬러 */
+}
+
+.newsletter-form .input-group {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.newsletter-form .input-icon {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+  color: #88949e;
+}
+
+.newsletter-form input[type="text"],
+.newsletter-form input[type="email"] {
+  width: 100%;
+  padding: 18px 20px 18px 50px; /* 아이콘 공간 확보 */
+  border: 1px solid #dbe2e8;
+  border-radius: 8px;
+  background-color: #fff;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.newsletter-form input:focus {
+  outline: none;
+  border-color: #5865F2;
+  box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.1);
+}
+
+.agreement-group {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.checkbox-container input { display: none; }
+.checkmark { position: relative; top: 0; left: 0; height: 20px; width: 20px; background-color: #e0e0e0; border-radius: 4px; transition: background-color 0.2s; }
+.checkbox-container:hover input ~ .checkmark { background-color: #ccc; }
+.checkbox-container input:checked ~ .checkmark { background-color: #5865F2; }
+.checkmark:after { content: ""; position: absolute; display: none; left: 7px; top: 3px; width: 5px; height: 10px; border: solid white; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.checkbox-container input:checked ~ .checkmark:after { display: block; }
+.checkbox-container .details-link { margin-left: auto; text-decoration: underline; color: #888; }
+
+
+.subscribe-button {
+  width: 100%;
+  padding: 20px;
+  background-color: #1a222a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.subscribe-button:hover {
+  background-color: #333;
+  transform: translateY(-2px);
+}
+
+.character-column {
+  position: relative;
+  height: 100%;
+  min-height: 500px; /* 캐릭터가 잘리지 않도록 최소 높이 확보 */
+}
+
+.character-wrapper, .character-wrapper-secondary {
+  position: absolute;
+}
+.character-wrapper {
+  right: -50px;
+  bottom: 0;
+  z-index: 5;
+}
+.character-wrapper-secondary {
+  left: -80px;
+  bottom: -20px;
+  z-index: 4;
+}
+
+.character-image {
+  width: 350px;
+}
+.character-image-secondary {
+  width: 250px;
+}
+
+.speech-bubble {
+  position: absolute;
+  top: 20px;
+  left: -80px;
+  background-color: #5865F2;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 20px 20px 0 20px;
+  font-weight: 600;
+}
+.speech-bubble.secondary {
+  top: 10px;
+  right: -80px;
+  left: auto;
+  background-color: #fff;
+  color: #333;
+  border-radius: 20px 20px 20px 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* 배경 장식 스타일 */
+.deco-shape {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(88, 101, 242, 0.08);
+  z-index: 1;
+}
+.shape-1 {
+  width: 400px;
+  height: 400px;
+  top: 50px;
+  left: 45%;
+}
+.shape-2 {
+  width: 300px;
+  height: 300px;
+  bottom: 50px;
+  right: 5%;
+}

@@ -5,19 +5,45 @@ import "./MapPage.css";
 import JobSelector from "./JobSelector";
 import Header from "./Header";
 
-
+// [수정] JobSelector.jsx의 jobCategories 구조와 완벽하게 일치시킨 zepLinks 객체
 const zepLinks = {
-  개발: "https://zep.us/play/dJGaXo",
-  마케팅: "https://zep.us/play/mkJXMe",
-  경영: "https://zep.us/play/7RlVQP",
-  생산: "https://zep.us/play/7RlVQP",
+  개발: {
+    backend: "https://zep.us/play/dJGaXo",   // 백엔드 개발자
+    frontend: "https://zep.us/play/dJGaXo",  // 프론트엔드 개발자
+    ai: "https://zep.us/play/dJGaXo",        // AI/데이터 개발자
+    devops: "https://zep.us/play/dJGaXo",    // DevOps/인프라 개발자
+    default: "https://zep.us/play/dJGaXo",   // 혹시 모를 기본값
+  },
+  마케팅: {
+    // 요청하신 대로 디지털/퍼포먼스 마케터에 각각 다른 URL을 지정합니다.
+    digital: "https://zep.us/play/mkxRqe",
+    performance: "https://zep.us/play/lpMa7P",
+    // 다른 마케팅 직무들은 기본 마케팅 월드로 연결합니다.
+    content: "https://zep.us/play/mkJXMe",
+    planning: "https://zep.us/play/mkJXMe",
+    default: "https://zep.us/play/mkJXMe", // 마케팅 카테고리의 기본값
+  },
+  경영: {
+    finance: "https://zep.us/play/7RlVQP",
+    product: "https://zep.us/play/7RlVQP",
+    business: "https://zep.us/play/7RlVQP",
+    hr: "https://zep.us/play/7RlVQP",
+    default: "https://zep.us/play/7RlVQP",
+  },
+  생산: {
+    worker: "https://zep.us/play/7RlVQP",
+    quality: "https://zep.us/play/7RlVQP",
+    manager: "https://zep.us/play/7RlVQP",
+    engineer: "https://zep.us/play/7RlVQP",
+    default: "https://zep.us/play/7RlVQP",
+  },
 };
 
 const MapPage = () => {
-  const [selectedJob, setSelectedJob] = useState(null); // "location" | "카테고리-key"
+  const [selectedJob, setSelectedJob] = useState(null);
   const [nickname, setNickname] = useState("");
   const [showLocationPopup, setShowLocationPopup] = useState(false);
-  const [zoomState, setZoomState] = useState(""); // zoom css 클래스 관리
+  const [zoomState, setZoomState] = useState("");
 
   useEffect(() => {
     const fetchNickname = async () => {
@@ -37,48 +63,51 @@ const MapPage = () => {
   const handleLocationClick = () => {
     setZoomState("zoom-location");
     setSelectedJob("location");
-
-    // 확대 애니메이션 이후 살짝 딜레이 주고 팝업 표시 (0.6초)
     setTimeout(() => {
       setShowLocationPopup(true);
     }, 50);
   };
 
-  const handleJobSelect = (category, jobKey) => {
+  // 이 함수는 이전과 동일하지만, 수정된 zepLinks 객체와 함께 동작하여 이제 정확히 작동합니다.
+  const handleJobSelect = (category, jobKey, label) => {
     setShowLocationPopup(false);
     const newZoomClass = `zoom-${category}-${jobKey}`;
     setZoomState(newZoomClass);
 
     setTimeout(() => {
-      const url = zepLinks[category];
-      if (url) window.location.href = url;
-    }, 2000); // 확대 후 이동
+      const url = zepLinks[category]?.[jobKey] || zepLinks[category]?.default;
+
+      if (url) {
+        window.location.href = url;
+      } else {
+        console.error(`'${category}' 카테고리의 '${jobKey}' 직무에 대한 URL을 찾을 수 없습니다.`);
+      }
+    }, 2000);
   };
 
   return (
     <>
-    <Header />
-    <div className="map-container">
-      <img
-        src="./assets/room.jpg"
-        alt="맵"
-        className={`map-image ${zoomState}`}
-        width={90}
-        height={90}
-      />
-
-      {/* 위치 아이콘은 처음에만 보임 */}
-      {zoomState !== "zoom-location" && !showLocationPopup && (
+      <Header />
+      <div className="map-container">
         <img
-          src="./assets/location-icon.png"
-          alt="위치 아이콘"
-          className="location-icon"
-          onClick={handleLocationClick}
+          src="./assets/room.jpg"
+          alt="맵"
+          className={`map-image ${zoomState}`}
+          width={90}
+          height={90}
         />
-      )}
 
-      {showLocationPopup && <JobSelector onSelect={handleJobSelect} />}
-    </div>
+        {zoomState !== "zoom-location" && !showLocationPopup && (
+          <img
+            src="./assets/location-icon.png"
+            alt="위치 아이콘"
+            className="location-icon"
+            onClick={handleLocationClick}
+          />
+        )}
+
+        {showLocationPopup && <JobSelector onSelect={handleJobSelect} />}
+      </div>
     </>
   );
 };
