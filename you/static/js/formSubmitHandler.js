@@ -1,3 +1,4 @@
+// static/js/formSubmitHandler.js
 import { formFields, documentForm, companyNameInput } from "./domElements.js";
 import {
   jobTitle,
@@ -14,8 +15,11 @@ import { drawDiagram } from "./diagramRenderer.js";
 import { renderFormFields } from "./formRenderer.js";
 
 /* ---------------------------------------
-   fetch helper
+   API base & fetch helper
 ---------------------------------------- */
+const ROOT_PREFIX = window.location.pathname.startsWith("/text") ? "/text" : "";
+const API_BASE = `${ROOT_PREFIX}/apiText`;
+
 function apiFetch(url, options = {}) {
   const token = localStorage.getItem("token");
   const headers = new Headers(options.headers || {});
@@ -147,16 +151,19 @@ export async function handleDocumentFormSubmit(e) {
       document.getElementById("feedback-reflection-input")?.value || "";
     const companyName = companyNameInput?.value?.trim() || "";
 
-    const response = await apiFetch(`/api/analyze_document/${currentDocType}`, {
-      method: "POST",
-      body: JSON.stringify({
-        job_title: jobTitle,
-        document_content: content,
-        version: currentDocVersion, // 편집 중인 현재 버전
-        feedback_reflection: feedbackReflection,
-        company_name: companyName,
-      }),
-    });
+    const response = await apiFetch(
+      `${API_BASE}/analyze_document/${currentDocType}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          job_title: jobTitle,
+          document_content: content,
+          version: currentDocVersion, // 편집 중인 현재 버전
+          feedback_reflection: feedbackReflection,
+          company_name: companyName,
+        }),
+      }
+    );
 
     const result = await response.json();
 
@@ -201,7 +208,7 @@ export async function handleDocumentFormSubmit(e) {
 
     // 폼 재렌더: 다음 버전 내용으로 프리필
     const schemaResponse = await apiFetch(
-      `/api/document_schema/${currentDocType}?job_slug=${jobTitle
+      `${API_BASE}/document_schema/${currentDocType}?job_slug=${jobTitle
         .replace(/ /g, "-")
         .replace(/\//g, "-")
         .toLowerCase()}`
@@ -265,7 +272,7 @@ export async function handlePortfolioFormSubmit(e) {
 
   showLoading(true, "포트폴리오 요약 및 PDF 생성 중...");
   try {
-    const response = await apiFetch("/api/portfolio_summary", {
+    const response = await apiFetch(`${API_BASE}/portfolio_summary`, {
       method: "POST",
       body: formData,
     });
@@ -281,8 +288,16 @@ export async function handlePortfolioFormSubmit(e) {
     // 인증 포함 다운로드
     if (result.download_url) {
       try {
+        // 서버가 /api/... 로 반환해도 안전하게 변환
+        let dl = result.download_url;
+        if (dl.startsWith("/api/")) {
+          dl = dl.replace("/api/", `${API_BASE}/`);
+        } else if (dl.startsWith("/apiText/") && ROOT_PREFIX) {
+          dl = `${ROOT_PREFIX}${dl}`;
+        }
+
         const token = localStorage.getItem("token");
-        const resp = await fetch(result.download_url, {
+        const resp = await fetch(dl, {
           method: "GET",
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -296,8 +311,7 @@ export async function handlePortfolioFormSubmit(e) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        const last =
-          result.download_url.split("/").pop() || "portfolio_summary.pdf";
+        const last = dl.split("/").pop() || "portfolio_summary.pdf";
         a.download = decodeURIComponent(last);
         document.body.appendChild(a);
         a.click();
@@ -360,7 +374,7 @@ export async function handlePortfolioFormSubmit(e) {
       nextPortfolioVersionNumber
     );
     const schemaResponse = await apiFetch(
-      "/api/document_schema/portfolio?job_slug=" +
+      `${API_BASE}/document_schema/portfolio?job_slug=` +
         jobTitle.replace(/ /g, "-").replace(/\//g, "-").toLowerCase()
     );
     const schema = await schemaResponse.json();

@@ -1,10 +1,41 @@
+// static/js/formRenderer.js
 import { formFields, documentForm } from "./domElements.js";
 import {
   handleDocumentFormSubmit,
   handlePortfolioFormSubmit,
 } from "./formSubmitHandler.js";
 
-// 공용 렌더 유틸
+/* =========================
+   공통: API 베이스/토큰 유틸
+   ========================= */
+const ROOT_PREFIX = window.location.pathname.startsWith("/text") ? "/text" : "";
+const API_BASE =
+  location.hostname === "localhost"
+    ? "http://localhost:5000/api/profile/me" // 로컬 직통(마이페이지 서버)
+    : `${ROOT_PREFIX}/apiText`;   
+
+// 로컬/배포에 따라 "마이페이지 프로필" 엔드포인트만 분리
+const IS_LOCAL =
+  location.hostname === "localhost" ||
+  location.hostname === "127.0.0.1" ||
+  // Vite 프록시 등 개발용 도메인 대응 원하면 여기에 추가
+  false;
+
+const USER_PROFILE_URL = IS_LOCAL
+  ? "http://localhost:5000/api/profile/me"
+  : `${API_BASE}/user_profile`;
+
+function getToken() {
+  return localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+}
+function authHeaders(extra = {}) {
+  const t = getToken();
+  return t ? { ...extra, Authorization: `Bearer ${t}` } : { ...extra };
+}
+
+/* =========================
+   공용 렌더 유틸
+   ========================= */
 function renderInput(field, namePrefix = "", value = "") {
   const requiredMark = field.required ? '<span class="required">*</span>' : "";
   const labelHTML = field.label
@@ -15,8 +46,8 @@ function renderInput(field, namePrefix = "", value = "") {
     return `
       ${labelHTML}
       <select name="${namePrefix + field.name}" ${
-      field.required ? "required" : ""
-    }>
+        field.required ? "required" : ""
+      }>
         ${field.options
           .map(
             (opt) =>
@@ -32,26 +63,87 @@ function renderInput(field, namePrefix = "", value = "") {
     return `
       ${labelHTML}
       <textarea name="${namePrefix + field.name}" ${
-      field.required ? "required" : ""
-    }>${value || ""}</textarea>`;
+        field.required ? "required" : ""
+      }>${value || ""}</textarea>`;
   }
 
   return `
     ${labelHTML}
     <input type="${field.type}" name="${namePrefix + field.name}" value="${
-    value || ""
-  }" ${field.required ? "required" : ""}>`;
+      value || ""
+    }" ${field.required ? "required" : ""}>`;
 }
 
 /* =========================
-   MyPage 스키마 전용: 이력서
-   education:   [{ level, status, school, major }]
-   activities:  [{ title, content }]
-   awards:      [{ title, content }]
-   certificates:[string]
+   MyPage → 이력서 매핑 유틸
    ========================= */
+function isEmptyResumeContent(content = {}) {
+  const keys = ["education", "activities", "awards", "certificates"];
+  return (
+    !content ||
+    keys.every((k) => {
+      const v = content[k];
+      if (Array.isArray(v)) {
+        return (
+          v.length === 0 ||
+          v.every((x) => !x || JSON.stringify(x) === "{}" || x === "")
+        );
+      }
+      return !v;
+    })
+  );
+}
 
-// 행 DOM 생성기: 학력
+async function fetchUserProfileSafe() {
+  try {
+    // 디버깅: 실제 요청 URL, Host 표시
+    console.log("🛰️ [프로필 요청] URL:", USER_PROFILE_URL, "Host:", location.host);
+
+    const res = await fetch(USER_PROFILE_URL, {
+      headers: authHeaders(),
+      credentials: IS_LOCAL ? "include" : "same-origin",
+    });
+
+    // 응답 상태 로그
+    console.log("🛰️ [프로필 응답] status:", res.status);
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // ✅ 콘솔 디버깅: 마이페이지 응답 전체 확인
+    console.log("📌 [마이페이지 API 응답]", data);
+
+    return data;
+  } catch (e) {
+    console.warn("⚠️ 프로필 불러오기 실패(무시하고 빈값 사용):", e);
+    return null;
+  }
+}
+
+// currentContent가 비어있으면 마이페이지 프로필로 기본값 채워서 반환
+async function hydrateResumeContentIfEmpty(currentContent = {}) {
+  if (!isEmptyResumeContent(currentContent)) return currentContent;
+
+  const profile = await fetchUserProfileSafe();
+  if (!profile) return currentContent;
+
+  const safeArray = (v, fallback) =>
+    Array.isArray(v) && v.length ? v : fallback;
+
+  return {
+    education: safeArray(profile.education, [
+      { level: "", status: "", school: "", major: "" },
+    ]),
+    activities: safeArray(profile.activities, [{ title: "", content: "" }]),
+    awards: safeArray(profile.awards, [{ title: "", content: "" }]),
+    certificates: safeArray(profile.certificates, [""]),
+  };
+}
+
+/* =========================
+   행 DOM 생성기
+   ========================= */
+// 학력
 function eduRowHTML(idx, data = {}) {
   const namePrefix = `education_${idx}_`;
   return `
@@ -103,7 +195,7 @@ function eduRowHTML(idx, data = {}) {
   `;
 }
 
-// 행 DOM 생성기: 2열(활동/수상)
+// 활동/수상 (2열)
 function twoColRowHTML(sectionKey, idx, data = {}, labels = ["제목", "내용"]) {
   const namePrefix = `${sectionKey}_${idx}_`;
   return `
@@ -131,7 +223,7 @@ function twoColRowHTML(sectionKey, idx, data = {}, labels = ["제목", "내용"]
   `;
 }
 
-// 행 DOM 생성기: 자격증(문자열)
+// 자격증(문자열)
 function certRowHTML(idx, value = "") {
   return `
     <div class="item-entry" data-index="${idx}">
@@ -151,7 +243,9 @@ function certRowHTML(idx, value = "") {
   `;
 }
 
-/* ---------- 이벤트 위임: 같은 라인 + 추가/삭제 ---------- */
+/* =========================
+   이벤트 위임
+   ========================= */
 function wireInlineAddRemove(section, rowFactory) {
   const container = document.getElementById(`${section}-container`);
   if (!container) return;
@@ -159,7 +253,6 @@ function wireInlineAddRemove(section, rowFactory) {
   container.addEventListener("click", (e) => {
     const entry = e.target.closest(".item-entry");
 
-    // 행 뒤에 새 행 추가
     if (e.target.classList.contains("add-after-button")) {
       e.preventDefault();
       const nextIdx = container.querySelectorAll(".item-entry").length;
@@ -170,7 +263,6 @@ function wireInlineAddRemove(section, rowFactory) {
       return;
     }
 
-    // 행 삭제 (전부 비면 자동으로 1행 생성)
     if (e.target.classList.contains("remove-item-button")) {
       e.preventDefault();
       if (entry) entry.remove();
@@ -185,8 +277,10 @@ function wireInlineAddRemove(section, rowFactory) {
   });
 }
 
-/* ---------- 메인 렌더 ---------- */
-export function renderFormFields(schema, currentContent = {}) {
+/* =========================
+   메인 렌더
+   ========================= */
+export async function renderFormFields(schema, currentContent = {}) {
   formFields.innerHTML = "";
   const docKoreanName =
     schema.korean_name || schema.title || currentContent.koreanName;
@@ -216,58 +310,53 @@ export function renderFormFields(schema, currentContent = {}) {
     const COVER_LETTER_FIELDS = [
       {
         name: "reason_for_application",
-        label: "1. 해당 직무에 지원한 이유를 서술하시오.",
+        label: "1. 해당 직무에 지원한 이유",
         type: "textarea",
         required: true,
       },
       {
         name: "expertise_experience",
-        label:
-          "2. 해당 분야에 대한 전문성을 기르기 위해 노력한 경험을 서술하시오.",
+        label: "2. 전문성을 기르기 위한 경험",
         type: "textarea",
         required: true,
       },
       {
         name: "collaboration_experience",
-        label: "3. 공동의 목표를 위해 협업을 한 경험을 서술하시오.",
+        label: "3. 협업 경험",
         type: "textarea",
         required: true,
       },
       {
         name: "challenging_goal_experience",
-        label:
-          "4. 도전적인 목표를 세우고 성취하기 위해 노력한 경험을 서술하시오.",
+        label: "4. 도전 목표 경험",
         type: "textarea",
         required: true,
       },
-      {
-        name: "growth_process",
-        label: "5. 자신의 성장과정을 서술하시오.",
-        type: "textarea",
-        required: true,
-      },
+      { name: "growth_process", label: "5. 성장과정", type: "textarea", required: true },
     ];
-    COVER_LETTER_FIELDS.forEach((f, idx) => {
-      container.innerHTML += `
-        <div class="input-group" style="margin-top:${idx > 0 ? "20px" : "0"};">
-          ${renderInput(f, "", currentContent[f.name] || "")}
-          <div class="error-message" style="display:none;color:#c00;font-size:12px;">필수 항목입니다.</div>
-        </div>`;
+    COVER_LETTER_FIELDS.forEach((f) => {
+      container.innerHTML += `<div class="input-group">${renderInput(
+        f,
+        "",
+        currentContent[f.name] || ""
+      )}</div>`;
     });
     formFields.appendChild(container);
     documentForm.onsubmit = handleDocumentFormSubmit;
     return;
   }
 
-  // 이력서 (MyPage 스키마와 1:1) - 헤더의 +추가 제거, 각 행에 +추가/삭제
+  // 이력서 — 비어 있으면 마이페이지 프로필로 자동 프리필
   if (docKoreanName === "이력서") {
+    const hydrated = await hydrateResumeContentIfEmpty(currentContent);
+
     const resumeContainer = document.createElement("div");
     resumeContainer.className = "resume-form";
 
     // 학력
     const edu =
-      Array.isArray(currentContent.education) && currentContent.education.length
-        ? currentContent.education
+      Array.isArray(hydrated.education) && hydrated.education.length
+        ? hydrated.education
         : [{ level: "", status: "", school: "", major: "" }];
 
     resumeContainer.innerHTML += `
@@ -279,44 +368,36 @@ export function renderFormFields(schema, currentContent = {}) {
 
     // 대외활동
     const acts =
-      Array.isArray(currentContent.activities) &&
-      currentContent.activities.length
-        ? currentContent.activities
+      Array.isArray(hydrated.activities) && hydrated.activities.length
+        ? hydrated.activities
         : [{ title: "", content: "" }];
 
     resumeContainer.innerHTML += `
       <h3>대외활동</h3>
       <div id="activities-container" class="array-field-container">
         ${acts
-          .map((row, i) =>
-            twoColRowHTML("activities", i, row, ["활동명", "주요 내용"])
-          )
+          .map((row, i) => twoColRowHTML("activities", i, row))
           .join("")}
       </div>
       <hr/>`;
 
     // 수상경력
     const awds =
-      Array.isArray(currentContent.awards) && currentContent.awards.length
-        ? currentContent.awards
+      Array.isArray(hydrated.awards) && hydrated.awards.length
+        ? hydrated.awards
         : [{ title: "", content: "" }];
 
     resumeContainer.innerHTML += `
       <h3>수상경력</h3>
       <div id="awards-container" class="array-field-container">
-        ${awds
-          .map((row, i) =>
-            twoColRowHTML("awards", i, row, ["수상명", "주요 내용"])
-          )
-          .join("")}
+        ${awds.map((row, i) => twoColRowHTML("awards", i, row)).join("")}
       </div>
       <hr/>`;
 
     // 자격증
     const certs =
-      Array.isArray(currentContent.certificates) &&
-      currentContent.certificates.length
-        ? currentContent.certificates
+      Array.isArray(hydrated.certificates) && hydrated.certificates.length
+        ? hydrated.certificates
         : [""];
 
     resumeContainer.innerHTML += `
@@ -327,72 +408,17 @@ export function renderFormFields(schema, currentContent = {}) {
 
     formFields.appendChild(resumeContainer);
 
-    // 섹션별 이벤트 위임
-    wireInlineAddRemove("education", (idx, data) => eduRowHTML(idx, data));
+    // 행 추가/삭제 위임
+    wireInlineAddRemove("education", eduRowHTML);
     wireInlineAddRemove("activities", (idx, data) =>
-      twoColRowHTML("activities", idx, data, ["활동명", "주요 내용"])
+      twoColRowHTML("activities", idx, data)
     );
     wireInlineAddRemove("awards", (idx, data) =>
-      twoColRowHTML("awards", idx, data, ["수상명", "주요 내용"])
+      twoColRowHTML("awards", idx, data)
     );
-    wireInlineAddRemove("certificates", (idx, data) => certRowHTML(idx, data));
+    wireInlineAddRemove("certificates", certRowHTML);
 
     documentForm.onsubmit = handleDocumentFormSubmit;
     return;
   }
-
-  // 기타 문서타입 (기존 스키마)
-  if (schema && schema.sections) {
-    schema.sections.forEach((section) => {
-      const sectionContainer = document.createElement("div");
-      sectionContainer.className = "section-container";
-      formFields.appendChild(sectionContainer);
-
-      const sectionTitle = document.createElement("h3");
-      sectionTitle.textContent = section.title;
-      sectionContainer.appendChild(sectionTitle);
-
-      if (section.is_array) {
-        sectionContainer.dataset.arrayFieldName = section.name;
-        const addButton = document.createElement("button");
-        addButton.type = "button";
-        addButton.textContent = `+ ${section.title} 추가`;
-        addButton.className = "add-array-item-button";
-        addButton.addEventListener("click", () => {
-          renderArrayItem(section, sectionContainer, {}, {});
-        });
-        sectionContainer.appendChild(addButton);
-
-        (currentContent[section.name] || []).forEach((itemContent) => {
-          renderArrayItem(section, sectionContainer, {}, itemContent);
-        });
-      } else if (section.fields) {
-        section.fields.forEach((field) => {
-          renderField(field, sectionContainer, currentContent);
-        });
-      }
-    });
-  }
-}
-
-function renderArrayItem(section, container, currentContent, itemContent = {}) {
-  const itemContainer = document.createElement("div");
-  itemContainer.className = "array-item-container";
-  section.fields.forEach((field) => {
-    renderField(field, itemContainer, itemContent);
-  });
-  const removeButton = document.createElement("button");
-  removeButton.type = "button";
-  removeButton.textContent = "삭제";
-  removeButton.className = "remove-array-item-button";
-  removeButton.onclick = () => itemContainer.remove();
-  itemContainer.appendChild(removeButton);
-  container.insertBefore(itemContainer, container.firstChild);
-}
-
-function renderField(field, container, content) {
-  const inputGroup = document.createElement("div");
-  inputGroup.className = "input-group";
-  inputGroup.innerHTML = renderInput(field, "", content[field.name] || "");
-  container.appendChild(inputGroup);
 }

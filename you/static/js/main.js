@@ -17,16 +17,12 @@ import {
   companyLoadingMessage,
 } from "./domElements.js";
 
-window.addEventListener("storage", (e) => {
-  if (e.key === "token") {
-    // e.newValue === null  → 삭제, 문자열 → 새 토큰 설정
-    location.reload(); // 가장 간단하고 확실: 메모리 상태/화면 동기화
-  }
-});
+// ------------------------------
+// 공통: API 베이스 & 토큰/Fetch
+// ------------------------------
+const ROOT_PREFIX = window.location.pathname.startsWith("/text") ? "/text" : "";
+const API_BASE = `${ROOT_PREFIX}/apiText`;
 
-/* ===========================
-   최소 토큰 유틸 (만료/재인증 강제 없음)
-=========================== */
 function isJWT(t) {
   return (
     typeof t === "string" &&
@@ -39,11 +35,6 @@ function getToken() {
   const t = s || l || "";
   return isJWT(t) ? t : "";
 }
-
-/* ===========================
-   공통 fetch: 토큰 있으면 헤더만 첨부
-   (401/403이어도 자동 재인증/모달 없음)
-=========================== */
 async function apiFetch(url, options = {}) {
   const headers = new Headers(options.headers || {});
   if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
@@ -53,16 +44,24 @@ async function apiFetch(url, options = {}) {
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  return fetch(url, { ...options, headers });
+  // url이 절대경로가 아니라면 API_BASE 붙이기
+  const fullUrl = url.startsWith("http")
+    ? url
+    : url.startsWith("/apiText/")
+    ? `${ROOT_PREFIX}${url}`
+    : `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+  return fetch(fullUrl, { ...options, headers });
 }
 
-/* ===========================
-   앱 시작
-=========================== */
-document.addEventListener("DOMContentLoaded", async () => {
-  // ✅ 더 이상 토큰 재확보(ensureToken) 같은 동작 없음
-  //    5173 로그인/로그아웃 시 8000의 /sso가 localStorage/sessionStorage에 토큰을 넣고/지움
+// 스토리지의 토큰이 바뀌면 전체 새로고침(SSO 동기화)
+window.addEventListener("storage", (e) => {
+  if (e.key === "token") location.reload();
+});
 
+// ------------------------------
+// 앱 시작
+// ------------------------------
+document.addEventListener("DOMContentLoaded", async () => {
   setJobTitle(document.body.dataset.jobTitle);
   const jobSlug = jobTitle.replace(/ /g, "-").replace(/\//g, "-").toLowerCase();
 
@@ -70,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     showLoading(true, "문서 데이터 로딩 중...");
 
     // 사용자별 저장 문서 로드
-    const response = await apiFetch(`/api/load_documents/${jobSlug}`);
+    const response = await apiFetch(`/load_documents/${jobSlug}`);
     if (response.ok) {
       const loadedData = await response.json();
 
@@ -119,7 +118,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       processLoadedDocs("cover_letter", loadedData.cover_letter);
       processLoadedDocs("portfolio", loadedData.portfolio);
     } else {
-      // 401/403 등이어도 자동 로그인 유도/모달 없이 그냥 로컬 기본 상태로 시작
       const txt = await response.text();
       console.warn("문서 로드 실패(인증 없음/무효 가능):", txt);
       initializeDefaultDocumentData();
@@ -133,35 +131,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   drawDiagram();
 
-  // 팝업창 닫기 버튼 클릭 이벤트
+  // 팝업창 닫기 버튼
   document.querySelector(".close-button").onclick = () => {
     closeEditModal();
   };
 
-  // 모달 외부 클릭 시 닫기 이벤트
+  // 모달 외부 클릭 시 닫기
   window.onclick = (event) => {
     const editModal = document.getElementById("edit-modal");
     const companyModalEl = document.getElementById("company-modal");
-    if (event.target == editModal) {
-      closeEditModal();
-    }
-    if (event.target == companyModalEl) {
-      companyModalEl.style.display = "none";
-    }
+    if (event.target == editModal) closeEditModal();
+    if (event.target == companyModalEl) companyModalEl.style.display = "none";
   };
 
-  // 마지막으로 분석한 기업 정보 로드 (없어도 자동 로그인 유도 안 함)
+  // 마지막 기업 분석 로드 (있으면 표시)
   try {
-    const lastAnalysisResponse = await apiFetch(
-      "/api/load_last_company_analysis"
-    );
+    const lastAnalysisResponse = await apiFetch(`/load_last_company_analysis`);
     if (lastAnalysisResponse.ok) {
       const lastAnalysis = await lastAnalysisResponse.json();
       if (lastAnalysis && lastAnalysis.company_name) {
         companyNameInput.value = lastAnalysis.company_name;
         renderCompanyAnalysis(lastAnalysis);
-        document.getElementById("company-analysis-area").style.display =
-          "block";
+        document.getElementById("company-analysis-area").style.display = "block";
       }
     } else {
       console.warn("이전에 분석한 기업 데이터가 없습니다.");
@@ -186,7 +177,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
 
     try {
-      const response = await apiFetch("/api/analyze_company", {
+      const response = await apiFetch(`/analyze_company`, {
         method: "POST",
         body: JSON.stringify({ company_name: companyName }),
       });
@@ -197,7 +188,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const result = await response.json();
-      const companyAnalysis = result.company_analysis;
+      const companyAnalysis = result.company_analysis || result;
 
       renderCompanyAnalysis(companyAnalysis);
       document.getElementById("company-analysis-area").style.display = "block";
@@ -226,33 +217,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     for (const key in analysisData) {
-      if (Object.prototype.hasOwnProperty.call(analysisData, key)) {
-        const value = analysisData[key];
-        const displayTitle = koreanTitles[key] || key;
+      if (!Object.prototype.hasOwnProperty.call(analysisData, key)) continue;
 
-        const analysisSection = document.createElement("div");
-        analysisSection.className = "analysis-section";
+      const value = analysisData[key];
+      const displayTitle = koreanTitles[key] || key;
 
-        const titleElement = document.createElement("h4");
-        titleElement.textContent = displayTitle;
-        analysisSection.appendChild(titleElement);
+      const analysisSection = document.createElement("div");
+      analysisSection.className = "analysis-section";
 
-        if (key === "competencies_to_highlight" && Array.isArray(value)) {
-          const listElement = document.createElement("ul");
-          value.forEach((item) => {
-            const listItem = document.createElement("li");
-            listItem.textContent = item;
-            listElement.appendChild(listItem);
-          });
-          analysisSection.appendChild(listElement);
-        } else {
-          const contentElement = document.createElement("p");
-          contentElement.textContent = value;
-          analysisSection.appendChild(contentElement);
-        }
+      const titleElement = document.createElement("h4");
+      titleElement.textContent = displayTitle;
+      analysisSection.appendChild(titleElement);
 
-        companyAnalysisText.appendChild(analysisSection);
+      if (key === "competencies_to_highlight" && Array.isArray(value)) {
+        const listElement = document.createElement("ul");
+        value.forEach((item) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = item;
+          listElement.appendChild(listItem);
+        });
+        analysisSection.appendChild(listElement);
+      } else {
+        const contentElement = document.createElement("p");
+        contentElement.textContent = value;
+        analysisSection.appendChild(contentElement);
       }
+
+      companyAnalysisText.appendChild(analysisSection);
     }
   }
 });

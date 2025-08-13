@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -8,6 +9,8 @@ from pathlib import Path
 import os, json, traceback, re
 from urllib.parse import unquote, quote
 from pydantic import BaseModel
+
+load_dotenv()
 
 # --- utils ---
 from utils import (
@@ -115,7 +118,7 @@ async def get_document_editor_page(request: Request, job_slug: str):
         {"request": request, "job_title": job_title, "job_slug": job_slug, "job_details": job_details}
     )
 
-@app.get("/api/document_schema/{doc_type}", response_class=JSONResponse)
+@app.get("/apiText/document_schema/{doc_type}", response_class=JSONResponse)
 async def get_document_schema_endpoint(doc_type: str, job_slug: str):
     job_title = get_job_title_from_slug(job_slug)
     if not job_title:
@@ -126,7 +129,7 @@ async def get_document_schema_endpoint(doc_type: str, job_slug: str):
     return JSONResponse(content=schema)
 
 # -------- profile (mypage) --------
-@app.get("/api/user_profile", response_class=JSONResponse)
+@app.get("/apiText/user_profile", response_class=JSONResponse)
 async def get_user_profile(user_id: str = Depends(get_current_user)):
     p = _user_profile_file(user_id)
     if not p.exists():
@@ -141,7 +144,7 @@ async def get_user_profile(user_id: str = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to read profile: {e}")
 
-@app.post("/api/user_profile", response_class=JSONResponse)
+@app.post("/apiText/user_profile", response_class=JSONResponse)
 async def save_user_profile(profile: UserProfile, user_id: str = Depends(get_current_user)):
     try:
         path = _user_profile_file(user_id)
@@ -151,7 +154,7 @@ async def save_user_profile(profile: UserProfile, user_id: str = Depends(get_cur
         raise HTTPException(status_code=500, detail=f"Failed to save profile: {e}")
 
 # -------- load documents --------
-@app.get("/api/load_documents/{job_slug}", response_class=JSONResponse)
+@app.get("/apiText/load_documents/{job_slug}", response_class=JSONResponse)
 async def api_load_documents(job_slug: str, user_id: str = Depends(get_current_user)):
     job_title = get_job_title_from_slug(job_slug)
     if not job_title:
@@ -171,7 +174,7 @@ async def api_load_documents(job_slug: str, user_id: str = Depends(get_current_u
         raise HTTPException(status_code=500, detail=f"Failed to load documents: {e}")
 
 # -------- company analysis --------
-@app.post("/api/analyze_company", response_class=JSONResponse)
+@app.post("/apiText/analyze_company", response_class=JSONResponse)
 async def analyze_company_endpoint(request_data: AnalyzeCompanyRequest, user_id: str = Depends(get_current_user)):
     company_name = request_data.company_name
     if not company_name:
@@ -181,7 +184,7 @@ async def analyze_company_endpoint(request_data: AnalyzeCompanyRequest, user_id:
     user_company_file.parent.mkdir(parents=True, exist_ok=True)
     return await perform_company_analysis(company_name, str(user_company_file))
 
-@app.get("/api/load_last_company_analysis", response_class=JSONResponse)
+@app.get("/apiText/load_last_company_analysis", response_class=JSONResponse)
 async def load_last_company_analysis(user_id: str = Depends(get_current_user)):
     company_file = _user_company_file(user_id)
     if not company_file.exists():
@@ -200,7 +203,7 @@ async def load_last_company_analysis(user_id: str = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to read analysis: {e}")
 
 # -------- analyze & save (update current, clone next) --------
-@app.post("/api/analyze_document/{doc_type}")
+@app.post("/apiText/analyze_document/{doc_type}")
 async def analyze_document_endpoint(
     doc_type: str,
     request_data: AnalyzeDocumentRequest,
@@ -301,7 +304,7 @@ async def analyze_document_endpoint(
         raise HTTPException(status_code=500, detail=f"Server error during analysis and saving: {e}")
 
 # -------- portfolio summary: update current, clone next --------
-@app.post("/api/portfolio_summary", response_class=JSONResponse)
+@app.post("/apiText/portfolio_summary", response_class=JSONResponse)
 async def portfolio_summary(
     job_title: str = Form(...),
     company_name: Optional[str] = Form(None),
@@ -361,7 +364,7 @@ async def portfolio_summary(
         raise HTTPException(status_code=500, detail=f"Portfolio summary failed: {e}")
 
 # -------- rollback --------
-@app.delete("/api/rollback_document/{doc_type}/{job_slug}/{version}")
+@app.delete("/apiText/rollback_document/{doc_type}/{job_slug}/{version}")
 async def rollback_document(doc_type: str, job_slug: str, version: int, user_id: str = Depends(get_current_user)):
     try:
         doc_dir = _user_doc_dir(user_id, job_slug, doc_type)
@@ -406,7 +409,7 @@ async def rollback_document(doc_type: str, job_slug: str, version: int, user_id:
         raise HTTPException(status_code=500, detail=f"Rollback failed: {e}")
 
 # -------- pdf download --------
-@app.get("/api/download_pdf/{job_slug}/{doc_type}/{filename}")
+@app.get("/apiText/download_pdf/{job_slug}/{doc_type}/{filename}")
 async def download_pdf_file(job_slug: str, doc_type: str, filename: str, user_id: str = Depends(get_current_user)):
     file_path = _user_doc_dir(user_id, job_slug, doc_type) / filename
     if not file_path.exists():

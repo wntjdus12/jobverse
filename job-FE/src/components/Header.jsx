@@ -103,7 +103,9 @@ const Header = () => {
 
           {/* AI 취업 코칭 */}
           <a
-            href="#logout"
+            onClick={() => {
+            window.location.href = "https://jobverse.site/text/";
+          }}
             style={{ textDecoration: "none", color: "#bf84ff" }} // ✅ 마이페이지와 동일
             className="hover:text-purple-600 transition font-medium" // ✅ 동일한 클래스
           >
