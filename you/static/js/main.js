@@ -17,14 +17,60 @@ import {
   companyLoadingMessage,
 } from "./domElements.js";
 
-// DOM이 완전히 로드되면 실행됩니다.
+window.addEventListener("storage", (e) => {
+  if (e.key === "token") {
+    // e.newValue === null  → 삭제, 문자열 → 새 토큰 설정
+    location.reload(); // 가장 간단하고 확실: 메모리 상태/화면 동기화
+  }
+});
+
+/* ===========================
+   최소 토큰 유틸 (만료/재인증 강제 없음)
+=========================== */
+function isJWT(t) {
+  return (
+    typeof t === "string" &&
+    /^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/.test(t)
+  );
+}
+function getToken() {
+  const s = sessionStorage.getItem("token");
+  const l = localStorage.getItem("token");
+  const t = s || l || "";
+  return isJWT(t) ? t : "";
+}
+
+/* ===========================
+   공통 fetch: 토큰 있으면 헤더만 첨부
+   (401/403이어도 자동 재인증/모달 없음)
+=========================== */
+async function apiFetch(url, options = {}) {
+  const headers = new Headers(options.headers || {});
+  if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  const token = getToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(url, { ...options, headers });
+}
+
+/* ===========================
+   앱 시작
+=========================== */
 document.addEventListener("DOMContentLoaded", async () => {
+  // ✅ 더 이상 토큰 재확보(ensureToken) 같은 동작 없음
+  //    5173 로그인/로그아웃 시 8000의 /sso가 localStorage/sessionStorage에 토큰을 넣고/지움
+
   setJobTitle(document.body.dataset.jobTitle);
   const jobSlug = jobTitle.replace(/ /g, "-").replace(/\//g, "-").toLowerCase();
 
   try {
     showLoading(true, "문서 데이터 로딩 중...");
-    const response = await fetch(`/api/load_documents/${jobSlug}`);
+
+    // 사용자별 저장 문서 로드
+    const response = await apiFetch(`/api/load_documents/${jobSlug}`);
     if (response.ok) {
       const loadedData = await response.json();
 
@@ -73,11 +119,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       processLoadedDocs("cover_letter", loadedData.cover_letter);
       processLoadedDocs("portfolio", loadedData.portfolio);
     } else {
-      console.error("Failed to load documents from DB:", await response.text());
+      // 401/403 등이어도 자동 로그인 유도/모달 없이 그냥 로컬 기본 상태로 시작
+      const txt = await response.text();
+      console.warn("문서 로드 실패(인증 없음/무효 가능):", txt);
       initializeDefaultDocumentData();
     }
   } catch (error) {
-    console.error("Error fetching documents on load:", error);
+    console.error("문서 초기 로딩 오류:", error);
     initializeDefaultDocumentData();
   } finally {
     showLoading(false);
@@ -93,21 +141,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 모달 외부 클릭 시 닫기 이벤트
   window.onclick = (event) => {
     const editModal = document.getElementById("edit-modal");
-    const companyModal = document.getElementById("company-modal");
+    const companyModalEl = document.getElementById("company-modal");
     if (event.target == editModal) {
       closeEditModal();
     }
-    if (event.target == companyModal) {
-      companyModal.style.display = "none";
+    if (event.target == companyModalEl) {
+      companyModalEl.style.display = "none";
     }
   };
 
-  // 💖 [새로 추가된 부분]: 페이지 로드 시 마지막으로 분석한 기업 정보 로드
+  // 마지막으로 분석한 기업 정보 로드 (없어도 자동 로그인 유도 안 함)
   try {
-    const lastAnalysisResponse = await fetch("/api/load_last_company_analysis");
+    const lastAnalysisResponse = await apiFetch(
+      "/api/load_last_company_analysis"
+    );
     if (lastAnalysisResponse.ok) {
       const lastAnalysis = await lastAnalysisResponse.json();
-      // 데이터가 존재하고, 기업명이 있으면 화면에 표시
       if (lastAnalysis && lastAnalysis.company_name) {
         companyNameInput.value = lastAnalysis.company_name;
         renderCompanyAnalysis(lastAnalysis);
@@ -118,10 +167,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.warn("이전에 분석한 기업 데이터가 없습니다.");
     }
   } catch (error) {
-    console.error("마지막 기업 분석 데이터를 불러오는 중 오류 발생:", error);
+    console.error("마지막 기업 분석 데이터 로딩 오류:", error);
   }
 
-  // 기업 분석 버튼 클릭 이벤트 리스너 추가
+  // 기업 분석 버튼
   analyzeCompanyButton.addEventListener("click", async () => {
     const companyName = companyNameInput.value.trim();
     if (!companyName) {
@@ -137,44 +186,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
 
     try {
-      const response = await fetch("/api/analyze_company", {
+      const response = await apiFetch("/api/analyze_company", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          company_name: companyName,
-        }),
+        body: JSON.stringify({ company_name: companyName }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
         throw new Error(error.detail || "기업 분석에 실패했습니다.");
       }
 
       const result = await response.json();
       const companyAnalysis = result.company_analysis;
 
-      // JSON 문자열 대신, 동적으로 HTML을 생성하여 표시
       renderCompanyAnalysis(companyAnalysis);
-
-      // `companyAnalysisResult` 대신 `companyAnalysisArea`를 표시
       document.getElementById("company-analysis-area").style.display = "block";
     } catch (error) {
       alert(`기업 분석 중 오류가 발생했습니다: ${error.message}`);
-      // `companyAnalysisResult` 대신 `companyAnalysisArea`를 숨김
       document.getElementById("company-analysis-area").style.display = "none";
     } finally {
       showLoading(false, null, companyLoadingOverlay, companyLoadingMessage);
     }
   });
 
-  /**
-   * AI 기업 분석 결과를 동적으로 생성하여 표시합니다.
-   * @param {Object} analysisData - AI 분석 결과 JSON 객체.
-   */
+  // 기업 분석 렌더링
   function renderCompanyAnalysis(analysisData) {
-    // JSON 키를 한국어 제목으로 매핑하는 객체
     const koreanTitles = {
       company_summary: "기업 개요",
       key_values: "핵심 가치",
@@ -182,7 +218,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       interview_tips: "면접 팁",
     };
 
-    // 기존 내용을 지우고 새로운 내용을 추가할 준비
     companyAnalysisText.innerHTML = "";
 
     if (!analysisData || Object.keys(analysisData).length === 0) {
@@ -190,11 +225,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // 각 항목을 순회하며 HTML을 생성
     for (const key in analysisData) {
       if (Object.prototype.hasOwnProperty.call(analysisData, key)) {
         const value = analysisData[key];
-        const displayTitle = koreanTitles[key] || key; // 매핑된 한국어 제목 사용
+        const displayTitle = koreanTitles[key] || key;
 
         const analysisSection = document.createElement("div");
         analysisSection.className = "analysis-section";
@@ -203,7 +237,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         titleElement.textContent = displayTitle;
         analysisSection.appendChild(titleElement);
 
-        // 'competencies_to_highlight'는 배열이므로 별도로 처리
         if (key === "competencies_to_highlight" && Array.isArray(value)) {
           const listElement = document.createElement("ul");
           value.forEach((item) => {
