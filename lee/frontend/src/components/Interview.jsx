@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import './Interview.css';
 import Modal from './Modal';
 import EndModal from './EndModal';
-import SummaryModal from './SummaryModal'; // ✅ 추가
+import SummaryModal from './SummaryModal'; 
 import interviewerA from '../assets/interviewerA.png';
 import interviewerB from '../assets/interviewerB.png';
 import interviewerC from '../assets/interviewerC.png';
@@ -11,7 +11,7 @@ import userProfile from '../assets/user.png';
 const Interview = () => {
   const [showModal, setShowModal] = useState(true);
   const [showEndModal, setShowEndModal] = useState(false);
-  const [showSummary, setShowSummary] = useState(false); // ✅ 추가
+  const [showSummary, setShowSummary] = useState(false); 
   const [username, setUsername] = useState('');
   const [jobRole, setJobRole] = useState('');
   const [input, setInput] = useState('');
@@ -26,7 +26,7 @@ const Interview = () => {
   // 개발 기본값: 프론트(8501) → 백엔드(3000)
   const BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3000/interview';
   // SummaryModal은 /interview/summary/:id 를 호출하므로 루트 base 필요
-  const SUMMARY_BASE = BASE_URL.replace(/\/+interview\/?$/, ''); // ✅ 추가
+  const SUMMARY_BASE = BASE_URL.replace(/\/+interview\/?$/, ''); 
 
   const interviewerIds = ['C', 'A', 'B'];
   const prevInterviewerRef = useRef(null);
@@ -60,7 +60,7 @@ const Interview = () => {
     const res = await fetch(url, options);
     if (!res.ok) {
       const t = await res.text().catch(() => '');
-      console.error('❌ Fetch fail:', res.status, url, t);
+      console.error('Fetch fail:', res.status, url, t);
       throw new Error(`HTTP ${res.status} on ${url}`);
     }
     return res;
@@ -192,7 +192,7 @@ const Interview = () => {
 
       return { ended: endedByServer, text: fullText };
     } catch (err) {
-      console.error('❌ 스트리밍 실패:', err.message);
+      console.error('스트리밍 실패:', err.message);
       return { ended: false, text: '' };
     }
   };
@@ -282,7 +282,7 @@ const Interview = () => {
         const data = await res.json();
         if (data.text) setInput(data.text);
       } catch (err) {
-        console.error('❌ STT 오류:', err);
+        console.error('STT 오류:', err);
       }
     };
 
@@ -301,7 +301,7 @@ const Interview = () => {
     window.location.href = '/';
   };
 
-  // ✅ “짧은 분석” 버튼 핸들러
+  // “짧은 분석” 버튼 핸들러
   const handleQuickSummary = () => {
     setShowEndModal(false);
     setShowSummary(true);
@@ -315,11 +315,11 @@ const Interview = () => {
         <EndModal
           open={showEndModal}
           onClose={handleInterviewEnd}
-          onQuick={handleQuickSummary}  // ✅ 연결
+          onQuick={handleQuickSummary}  // 연결
         />
       )}
 
-      {/* ✅ 요약 모달 렌더링 */}
+      {/* 요약 모달 렌더링 */}
       <SummaryModal
         open={showSummary}
         sessionId={sessionId}
