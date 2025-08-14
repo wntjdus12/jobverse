@@ -1,0 +1,20 @@
+services:
+  weaviate:
+    image: semitechnologies/weaviate:1.25.3
+    restart: unless-stopped
+    ports:
+      - "8080:8080"               # 퍼블릭IP:8080 → 컨테이너:8080
+    environment:
+      QUERY_DEFAULTS_LIMIT: "25"
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"   # 공개 노출이면 보안 유의!
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "text2vec-openai"
+      ENABLE_MODULES: "text2vec-openai"
+      OPENAI_APIKEY: "${OPENAI_API_KEY}"                # .env에 키 넣기
+      CLUSTER_HOSTNAME: "weaviate-1"                    # 단일 노드 고정
+      RAFT_BOOTSTRAP_EXPECT: "1"                        # 단일 노드로 리더 선출
+    volumes:
+      - weaviate-data:/var/lib/weaviate
+
+volumes:
+  weaviate-data:
