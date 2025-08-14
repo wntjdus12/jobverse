@@ -62,19 +62,31 @@ router.post('/start', async (req, res, next) => {
     await connectMongo();
     try { await ensureSchema(); } catch (e) { console.warn('[ensureSchema] skip:', e.message); }
 
-    const rawName   = (req.user?.name || req.body.userName || req.body.name || '지원자').trim();
-    const jobRole   = (req.body.job || req.body.jobRole || '직무 미지정').trim();
+    // ✅ 기본값 강제 제거, 키 유연 수용 + 필수 검증
+    const rawName = (req.user?.name ?? req.body.userName ?? req.body.name ?? '').toString().trim();
+    const rawRole = (req.body.jobRole ?? req.body.job ?? '').toString().trim();
+
+    if (!rawName || !rawRole) {
+      return res.status(400).json({ error: 'userName and jobRole are required' });
+    }
+
     const userId    = (req.user?.id || req.body.userId || null);
     const userEmail = (req.user?.email || req.body.userEmail || null);
 
     const cleanName = rawName.length > 30 ? '지원자' : rawName.replace(/[^가-힣a-zA-Z0-9 _-]/g, '');
+
     const session = await Session.create({
-      userName: cleanName, userId, userEmail, jobRole, status: 'ongoing'
+      userName: cleanName,
+      userId,
+      userEmail,
+      jobRole: rawRole,            // ✅ 그대로 저장
+      status: 'ongoing'
     });
 
     const role = ROLES[Math.floor(Math.random() * ROLES.length)];
     const firstQuestion = `${cleanName}님, 자기소개 부탁드립니다.`;
 
+    // 첫 질문 저장
     const qDoc = await Message.create({
       sessionId: session._id,
       userName: cleanName,
@@ -86,6 +98,7 @@ router.post('/start', async (req, res, next) => {
       text: firstQuestion
     });
 
+    // 벡터 업서트
     try {
       await upsert('QuestionChunk', {
         text: firstQuestion,
@@ -93,14 +106,14 @@ router.post('/start', async (req, res, next) => {
         userName: cleanName,
         userId,
         userEmail,
-        jobRole,
+        jobRole: rawRole,
         turn: 1,
         mongoMessageId: String(qDoc._id),
         interviewerRole: role
       });
     } catch (e) { console.warn('[upsert QuestionChunk] skip:', e.message); }
 
-    // interviewer 헤더 노출 (CORS 노출 헤더 포함)
+    // interviewer 헤더 노출
     res.setHeader('interviewer', role);
     setExposeHeaders(res);
 
@@ -113,10 +126,9 @@ router.post('/start', async (req, res, next) => {
 // -------------------- [2] 후속 질문 (SSE 스트리밍) --------------------
 router.post('/chat', async (req, res, next) => {
   try {
-    const { sessionId, jobRole, message: userAnswer } = req.body;
-    const userName  = (req.user?.name || req.body.userName || req.body.name || '지원자').trim();
-    const userId    = (req.user?.id || req.body.userId || null);
-    const userEmail = (req.user?.email || req.body.userEmail || null);
+    const { sessionId, message: userAnswer } = req.body;
+    const userName  = (req.user?.name || req.body.userName || req.body.name || '지원자').toString().trim();
+    let   jobRole   = (req.body.jobRole ?? req.body.job ?? '').toString().trim(); // ✅ 우선 body
 
     if (!sessionId || !userName || !userAnswer?.trim()) {
       return res.status(422).json({ error: 'sessionId, userName, message는 필수입니다.' });
@@ -125,31 +137,43 @@ router.post('/chat', async (req, res, next) => {
     await connectMongo();
     try { await ensureSchema(); } catch (e) { console.warn('[ensureSchema] skip:', e.message); }
 
-    // turn 계산
+    // ✅ 세션에서 jobRole 보강 (프론트 누락 대비)
+    if (!jobRole) {
+      const sess = await Session.findById(sessionId).lean();
+      jobRole = sess?.jobRole || '';
+    }
+
+    // 마지막 메시지 조회 (턴 계산용)
     const lastMsg = await Message.findOne({ sessionId }).sort({ createdAt: -1 });
 
     // 1) 사용자 답변 저장 (+벡터)
+    const currentTurn = lastMsg?.turn || 1;
     const aDoc = await Message.create({
-      sessionId, userName, userId, userEmail,
+      sessionId,
+      userName,
+      userId: (req.user?.id || req.body.userId || null),
+      userEmail: (req.user?.email || req.body.userEmail || null),
       speaker: 'user',
-      turn: lastMsg?.turn || 1,
+      turn: currentTurn, // 기존 구조 유지
       text: userAnswer
     });
     try {
       await upsert('AnswerChunk', {
         text: userAnswer,
         sessionId: String(sessionId),
-        userName, userId, userEmail, jobRole,
-        turn: lastMsg?.turn || 1,
+        userName,
+        userId: (req.user?.id || req.body.userId || null),
+        userEmail: (req.user?.email || req.body.userEmail || null),
+        jobRole,
+        turn: currentTurn,
         mongoMessageId: String(aDoc._id)
       });
     } catch (e) { console.warn('[upsert AnswerChunk] skip:', e.message); }
 
-    // 2) 이미 ROUNDS개 질문이 모두 나간 상태라면 → 종료 신호 전송 (명시적 헤더)
+    // 2) 이미 ROUNDS개 질문이 모두 나간 상태라면 → 종료 신호 전송
     const asked = await askedCount(sessionId);
     if (asked >= ROUNDS) {
       setSSEHeaders(res, { ended: true }); // X-Interview-Ended: 1 포함
-      // 본문은 짧은 안내만 전달(프론트는 헤더만 보고 모달 띄워도 무방)
       res.write(`data: ${JSON.stringify({ answer: '면접이 종료되었습니다. 참여해 주셔서 감사합니다.' })}\n\n`);
       res.write('data: [DONE]\n\n');
       return res.end();
@@ -159,7 +183,10 @@ router.post('/chat', async (req, res, next) => {
     let avoidFromVector = [];
     try {
       avoidFromVector = await findSimilarQuestions({
-        text: userAnswer, sessionId, userName, userId, userEmail, jobRole, limit: 5
+        text: userAnswer, sessionId, userName,
+        userId: (req.user?.id || req.body.userId || null),
+        userEmail: (req.user?.email || req.body.userEmail || null),
+        jobRole, limit: 5
       });
     } catch (e) {
       console.warn('[findSimilarQuestions] skip:', e.message);
@@ -256,15 +283,23 @@ router.post('/chat', async (req, res, next) => {
 
       // 질문 저장 + Weaviate 업서트
       const qDoc = await Message.create({
-        sessionId, userName, userId, userEmail,
-        speaker: 'interviewer', interviewerRole: role,
-        turn: (lastMsg?.turn || 1) + 1, text: safeQuestion
+        sessionId,
+        userName,
+        userId: (req.user?.id || req.body.userId || null),
+        userEmail: (req.user?.email || req.body.userEmail || null),
+        speaker: 'interviewer',
+        interviewerRole: role,
+        turn: (lastMsg?.turn || 1) + 1,
+        text: safeQuestion
       });
       try {
         await upsert('QuestionChunk', {
           text: safeQuestion,
           sessionId: String(sessionId),
-          userName, userId, userEmail, jobRole,
+          userName,
+          userId: (req.user?.id || req.body.userId || null),
+          userEmail: (req.user?.email || req.body.userEmail || null),
+          jobRole,
           turn: (lastMsg?.turn || 1) + 1,
           mongoMessageId: String(qDoc._id),
           interviewerRole: role
