@@ -12,7 +12,10 @@ const app = express();
 // ---- 기본 미들웨어 ----
 app.disable('x-powered-by');
 app.use(morgan('dev'));
+
+// JSON / URL-Encoded 파서
 app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // CORS 화이트리스트 (ENV로도 덮어쓸 수 있게)
 const DEFAULT_ORIGINS = [
@@ -37,7 +40,10 @@ const corsOptions = {
   // 프론트에서 스트림 헤더 읽게 노출
   exposedHeaders: ['interviewer', 'X-Interview-Ended'],
 };
+
 app.use(cors(corsOptions));
+// ❌ 문제 원인: 와일드카드 OPTIONS 라우트 제거
+// app.options('*', cors(corsOptions));
 
 // 리버스 프록시(Nginx/ALB) 뒤에 있으면 켜기
 if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
@@ -54,16 +60,23 @@ app.get('/healthz', (req, res) => {
 });
 
 // ---- 라우트 장착 ----
-// ✅ API_PREFIX 유효성 검사 + 로깅
+// API_PREFIX 유효성 검사 + 로깅
 const rawPrefix = process.env.API_PREFIX || ''; // 예: '/api', '', '/v1'
+const looksLikeUrl = /^https?:\/\//i.test(rawPrefix); // 절대 URL 방지
 const isValidPrefix = /^$|^(\/[a-zA-Z0-9._-]+)*$/.test(rawPrefix); // 허용: '', '/', '/api', '/api/v1'
-const API_PREFIX = isValidPrefix ? rawPrefix : '';
-console.log(`[app] API_PREFIX="${rawPrefix}" -> using "${API_PREFIX}"`);
-if (!isValidPrefix) {
-  console.warn(`[app] Invalid API_PREFIX detected. Fallback to ""`);
-}
 
-// routes import / mount 로깅 (문제 지점 파악에 도움)
+// ✅ 빈 문자열/절대 URL/잘못된 패턴이면 무조건 '/'
+const API_PREFIX = (looksLikeUrl || !isValidPrefix) ? '/' : (rawPrefix || '/');
+
+if (looksLikeUrl) {
+  console.warn(`[app] API_PREFIX looks like a URL ("${rawPrefix}"). Forcing '/'`);
+}
+if (!isValidPrefix) {
+  console.warn(`[app] Invalid API_PREFIX "${rawPrefix}". Forcing '/'`);
+}
+console.log(`[app] API_PREFIX="${rawPrefix}" -> using "${API_PREFIX}"`);
+
+// routes import / mount 로깅
 let routes;
 try {
   console.log('[app] importing routes...');
@@ -75,8 +88,8 @@ try {
 }
 
 try {
-  console.log('[app] mounting routes at', API_PREFIX || '(root)');
-  app.use(API_PREFIX, routes);
+  console.log('[app] mounting routes at', API_PREFIX);
+  app.use(API_PREFIX, routes); // 최소 '/' 보장
   console.log('[app] routes mounted');
 } catch (e) {
   console.error('[app] app.use() failed while mounting routes:', e);
@@ -87,7 +100,7 @@ try {
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 app.listen(PORT, HOST, () => {
-  console.log(`API listening on http://${HOST}:${PORT}${API_PREFIX}`);
+  console.log(`API listening on http://${HOST}:${PORT}${API_PREFIX === '/' ? '' : API_PREFIX}`);
 });
 
 module.exports = app;
