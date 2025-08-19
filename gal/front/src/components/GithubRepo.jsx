@@ -167,7 +167,7 @@ export default function GithubRepo() {
                       >
                         {selected ? "포폴에서 제거" : "포폴에 추가"}
                       </button>
-                      <a
+                      {/* <a
                         className="btn btn-ghost"
                         href={repo.html_url}
                         target="_blank"
@@ -175,7 +175,7 @@ export default function GithubRepo() {
                         title="GitHub에서 열기"
                       >
                         GitHub
-                      </a>
+                      </a> */}
                     </div>
                   </article>
                 );
