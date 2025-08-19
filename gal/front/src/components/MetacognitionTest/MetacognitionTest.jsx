@@ -41,7 +41,7 @@ export default function MetacognitionTest() {
 
       axios
         .post(
-          "http://localhost:8004/metacognition/analyze",
+          "http://localhost:8004/api/metacognition/analyze",
           { answers },
           { headers: { Authorization: `Bearer ${token}` } }
         )

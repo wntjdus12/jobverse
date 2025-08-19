@@ -3,7 +3,7 @@ import { getAuthHeaders } from "../../lib/authHeaders";
 import "./ResumeForm.css";
 import JobStats from "./JobStats";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8004";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8004/api";
 
 // 직무 옵션 (이미지 기준)
 const JOB_OPTIONS = [
