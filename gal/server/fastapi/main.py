@@ -12,17 +12,19 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:8502","https://jobverse.site"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-from routers import video, portfolio
+from routers import video, portfolio, metacognition, resume
 
 app.include_router(video.router)
 app.include_router(portfolio.router)
+app.include_router(metacognition.router)
+app.include_router(resume.router)
 
 
 @app.get("/")
