@@ -81,8 +81,7 @@
   user-select: none;
 }
 .thumb-a {
-  background: radial-gradient(circle at 20% 30%, #7aaaff, #3d7dff 70%),
-    linear-gradient(45deg, #8ec5ff, #ff9bc1);
+  background: linear-gradient(135deg, #8ec5ff, #4a8dff);
 }
 .thumb-b {
   background: linear-gradient(135deg, #57a1ff, #ffc16b);
@@ -91,15 +90,23 @@
   background: linear-gradient(135deg, #62d3ff, #ffa4c6);
 }
 
-.thumb img.thumb-icon {
+.github-icon {
   width: 150px; /* 원하는 크기로 조절 */
   height: 150px;
   object-fit: contain;
 }
 
+.resume-icon {
+  width: 80px;
+  height: 80px;
+}
+
 /* 본문 */
 .card-body {
   padding: 18px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .card-body h3 {
   margin: 0 0 6px;
