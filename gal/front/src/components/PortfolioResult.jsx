@@ -113,13 +113,13 @@ export default function PortfolioResult() {
         const [langs, contrib, readme] = await Promise.all([
           axios
             .get(
-              `http://localhost:8004/repos/${username}/${repo.name}/languages`
+              `http://localhost:8004/api/portfolio/repos/${username}/${repo.name}/languages`
             )
             .then((r) => r.data)
             .catch(() => ({})),
           axios
             .get(
-              `http://localhost:8004/repos/${username}/${repo.name}/contributions/${username}`
+              `http://localhost:8004/api/portfolio/repos/${username}/${repo.name}/contributions/${username}`
             )
             .then((r) => r.data)
             .catch(() => ({
@@ -128,14 +128,16 @@ export default function PortfolioResult() {
               contribution_percent: 0,
             })),
           axios
-            .get(`http://localhost:8004/repos/${username}/${repo.name}/readme`)
+            .get(
+              `http://localhost:8004/api/portfolio/repos/${username}/${repo.name}/readme`
+            )
             .then((r) => r.data?.readme_markdown || "")
             .catch(() => ""),
         ]);
 
         const summary = readme
           ? await axios
-              .post("http://localhost:8004/openai-summary/", {
+              .post("http://localhost:8004/api/portfolio/openai-summary/", {
                 readme,
                 github_url: `https://github.com/${username}/${repo.name}`,
               })

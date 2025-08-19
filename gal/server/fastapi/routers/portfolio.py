@@ -10,9 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import httpx
 
-router = APIRouter(
-    tags=["Portfolio (GitHub & OpenAI)"],
-)
+router = APIRouter(prefix="/portfolio", tags=["Portfolio (GitHub & OpenAI)"])
 
 # --- 환경변수 및 설정 ---
 GITHUB_API_URL = "https://api.github.com"

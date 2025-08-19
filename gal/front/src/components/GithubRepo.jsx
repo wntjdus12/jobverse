@@ -47,7 +47,9 @@ export default function GithubRepo() {
   const fetchRepos = async () => {
     if (!username) return alert("GitHub 아이디를 입력하세요.");
     try {
-      const res = await axios.get(`http://localhost:8004/repos/${username}`);
+      const res = await axios.get(
+        `http://localhost:8004/api/portfolio/repos/${username}`
+      );
       setRepos(res.data);
       setSelectedRepos([]);
       setLanguagesData({});
@@ -63,7 +65,7 @@ export default function GithubRepo() {
     setModalOpen(true);
     try {
       const res = await axios.get(
-        `http://localhost:8004/repos/${username}/${repo.name}/readme`
+        `http://localhost:8004/api/portfolio/repos/${username}/${repo.name}/readme`
       );
       setModalReadmeHtml(DOMPurify.sanitize(res.data.readme_html || ""));
     } catch {
@@ -84,7 +86,7 @@ export default function GithubRepo() {
     for (const repo of selectedRepos) {
       try {
         const res = await axios.get(
-          `http://localhost:8004/repos/${username}/${repo.name}/languages`
+          `http://localhost:8004/api/portfolio/repos/${username}/${repo.name}/languages`
         );
         for (const [lang, bytes] of Object.entries(res.data || {})) {
           langAggregate[lang] = (langAggregate[lang] || 0) + bytes;

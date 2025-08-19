@@ -21,10 +21,15 @@ app.add_middleware(
 
 from routers import video, portfolio, metacognition, resume
 
-app.include_router(video.router)
-app.include_router(portfolio.router)
-app.include_router(metacognition.router)
-app.include_router(resume.router)
+# app.include_router(video.router)
+# app.include_router(portfolio.router)
+# app.include_router(metacognition.router)
+# app.include_router(resume.router)
+
+app.include_router(portfolio.router, prefix="/api", tags=["portfolio"]) # 아래처럼 각각 붙이세요 
+app.include_router(resume.router, prefix="/api", tags=["resume"]) 
+app.include_router(video.router, prefix="/api", tags=["video"]) 
+app.include_router(metacognition.router, prefix="/api", tags=["metacog"]) 
 
 
 @app.get("/")
