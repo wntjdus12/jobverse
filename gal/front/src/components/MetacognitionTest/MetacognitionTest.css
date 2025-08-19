@@ -1,0 +1,155 @@
+/* --- 변수 설정 (랜딩 페이지 테마) --- */
+.test-container {
+  --primary-color: #3d7dff;
+  --text-color-primary: #132a4d;
+  --text-color-secondary: #6c757d;
+  --light-border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* --- 전체 레이아웃 (카드 형식 제거) --- */
+.test-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 48px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* 페이지 전용 그라디언트 배경 */
+  background: linear-gradient(180deg, #faf4e8 0%, #d6e4ff 45%, #bdefff 100%);
+}
+
+/* --- 컨텐츠 영역 --- */
+.test-container .test-content {
+  width: 100%;
+  max-width: 550px;
+  padding-top: 24px;
+}
+
+/* --- Progress Bar --- */
+.test-container .progress-bar-container {
+  width: 100%;
+  max-width: 550px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 48px;
+}
+
+.test-container .progress-bar-filler {
+  height: 100%;
+  background: var(--primary-color);
+  border-radius: 4px;
+  transition: width 0.4s ease-in-out;
+}
+
+/* --- Question --- */
+.test-container .question-container,
+.test-container .results-container {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.test-container .question-counter {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 12px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.test-container .question-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text-color-primary);
+  margin: 0 0 40px 0;
+  line-height: 1.5;
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+.test-container .choices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.test-container .choice-button {
+  width: 100%;
+  padding: 18px 24px;
+  border: 1px solid var(--light-border-color);
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+
+  font-size: 1.1rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-color-primary);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.test-container .choice-button:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(255, 255, 255, 1);
+  color: var(--primary-color);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* --- 결과 헤더 스타일 --- */
+.test-container .results-container h2 {
+  font-size: 2.2rem;
+  color: var(--text-color-primary);
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+/* ========================= */
+/* ✅ 로딩 오버레이 & 스피너 */
+/* ========================= */
+.test-container .loading-overlay {
+  position: fixed; /* 화면 전체 덮기 */
+  inset: 0;
+  background: linear-gradient(180deg, #faf4e8 0%, #d6e4ff 45%, #bdefff 100%);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.test-container .loading-spinner {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 6px solid #e9eef8;
+  border-top-color: var(--primary-color);
+  animation: spin 0.8s linear infinite;
+}
+
+.test-container .loading-text {
+  font-size: 1rem;
+  color: var(--text-color-secondary);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
