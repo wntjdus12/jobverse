@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from fastapi.responses import StreamingResponse
 from pymongo import MongoClient
 
@@ -5,9 +7,11 @@ from bson import ObjectId
 from pymongo import MongoClient
 import gridfs
 
+load_dotenv()
 
-
-client = MongoClient("mongodb://admin:admin123@3.39.202.109:27017/job?authSource=admin")
+# ✅ .env 파일에서 MONGO_URI 변수 읽기
+MONGO_URI = os.getenv("MONGO_URI")
+client = MongoClient(MONGO_URI)
 db = client["job"]       
 
 fs = gridfs.GridFS(db, collection="videos")   
