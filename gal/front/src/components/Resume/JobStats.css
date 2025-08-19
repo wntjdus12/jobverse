@@ -1,0 +1,249 @@
+/* ★ 모든 스타일을 .jobstats-scope 내부로 제한해 다른 페이지에 영향 없음 */
+.jobstats-scope {
+  /* 컬러 & 스페이싱 변수 */
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --surface-elev: #fffefc;
+  --border: #ece8e0;
+  --text: #222;
+  --muted: #7c8290;
+
+  --bar-neutral: #d9d9d9;
+  --bar-neutral-stroke: #cfcfcf;
+  --bar-accent: #6e80ff;
+  --bar-accent-stroke: #5b6af0;
+
+  --ring: 0 0 0 3px rgba(110, 128, 255, 0.14);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 18px;
+  --space-5: 24px;
+  --space-6: 32px;
+}
+
+/* ====== 베이스 ====== */
+.jobstats-scope .jobstats {
+  margin-top: var(--space-2);
+  color: var(--text);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Apple SD Gothic Neo", "Noto Sans KR", "맑은 고딕", sans-serif;
+}
+.jobstats-scope .jobstats--segmented {
+  background: transparent;
+}
+
+.jobstats-scope .jobstats-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-2);
+}
+.jobstats-scope .jobstats-titleline {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* ====== 탭 ====== */
+.jobstats-scope .jobstats-tabs {
+  margin-top: var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.jobstats-scope .jobstats-tab {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #fff, #fbfbfb);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    transform 0.08s ease, background 0.15s ease;
+  will-change: transform;
+}
+.jobstats-scope .jobstats-tab:hover {
+  border-color: #ddd7cb;
+  transform: translateY(-1px);
+}
+.jobstats-scope .jobstats-tab.is-active {
+  border-color: #d8d3c7;
+  background: #faf8f4;
+  box-shadow: var(--ring);
+}
+.jobstats-scope .jobstats-tab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ====== 카드 ====== */
+.jobstats-scope .jobstats-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--space-4);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.jobstats-scope .jobstats-card--single {
+  margin-top: var(--space-3);
+}
+.jobstats-scope .jobstats-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 2px 0 var(--space-3);
+}
+.jobstats-scope .jobstats-card-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #373737;
+  letter-spacing: -0.01em;
+}
+
+/* ====== 차트 ====== */
+.jobstats-scope .jobstats-chart-wrap {
+  height: clamp(220px, 38vh, 340px);
+}
+.jobstats-scope .jobstats-chart-wrap--tall {
+  height: clamp(280px, 42vh, 420px);
+}
+
+/* ====== 리스트 ====== */
+.jobstats-scope .jobstats-list {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.jobstats-scope .jobstats-li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 0;
+  border-top: 1px dashed var(--border);
+}
+.jobstats-scope .jobstats-li:first-child {
+  border-top: 0;
+}
+.jobstats-scope .jobstats-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.jobstats-scope .jobstats-count {
+  opacity: 0.9;
+  font-weight: 800;
+}
+
+/* ====== 빈 상태 ====== */
+.jobstats-scope .jobstats-nodata {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 18px 0;
+  text-align: center;
+}
+
+/* ====== 모달 ====== */
+.jobstats-scope.jsm-overlay,
+.jobstats-scope .jsm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: saturate(120%) blur(2px);
+  z-index: 1000;
+  padding: 8px;
+  animation: fadeIn 0.18s ease-out;
+}
+
+/* overlay 정렬 */
+.jobstats-scope.jsm-overlay.jsm-overlay--center,
+.jobstats-scope .jsm-overlay.jsm-overlay--center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.jobstats-scope .jsm-sheet--center {
+  position: relative;
+  width: min(980px, 96%);
+  max-height: 92dvh;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 닫기 버튼 */
+.jobstats-scope .jsm-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, background 0.15s ease,
+    border-color 0.15s ease, transform 0.08s ease;
+}
+.jobstats-scope .jsm-close:hover {
+  background: #fafafa;
+  border-color: #ddd7cb;
+  transform: translateY(-1px);
+}
+.jobstats-scope .jsm-close:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.jobstats-scope .jsm-body {
+  overflow: auto;
+  padding: clamp(10px, 2vmin, 16px);
+  background: radial-gradient(
+      60% 60% at 20% 0%,
+      #ffffff 0%,
+      rgba(255, 255, 255, 0) 70%
+    ),
+    radial-gradient(70% 70% at 100% 10%, #fff7f0 0%, rgba(255, 255, 255, 0) 60%),
+    var(--bg);
+  border-top: 1px solid #f2eee6;
+}
+
+/* ====== 트랜지션/포커스 ====== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.jobstats-scope .jobstats-tab:focus-visible,
+.jobstats-scope .jsm-close:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-color: #d8d3c7;
+}
