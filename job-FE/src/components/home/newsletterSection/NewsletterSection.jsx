@@ -36,7 +36,7 @@ const NewsletterSection = () => {
         {/* 왼쪽: 폼 영역 */}
         <div className="form-column">
           <motion.h2 variants={itemVariants} className="newsletter-title">
-            <span className="title-highlight">뉴스레터.</span>
+            <span className="title-highlight">JOBVERSE</span>
             <br />
             지금 구독하고 최신 소식을 받아보세요.
           </motion.h2>
@@ -72,7 +72,7 @@ const NewsletterSection = () => {
         {/* 오른쪽: 캐릭터 영역 */}
         <div className="character-column">
           <motion.div variants={characterVariants} className="character-wrapper">
-            <img src="/images/feature-company.jpg" alt="JOBVERSE Avatar" className="character-image" />
+            <img src="./public/bus.png" alt="JOBVERSE Avatar" className="character-image" />
             <motion.div 
               className="speech-bubble"
               initial={{ scale: 0, opacity: 0 }}
@@ -87,7 +87,7 @@ const NewsletterSection = () => {
              className="character-wrapper-secondary"
              transition={{ delay: 0.2 }}
             >
-            <img src="/images/feature-portfolio.jpg" alt="JOBVERSE Robot Avatar" className="character-image-secondary" />
+            <img src="./public/job.png" alt="JOBVERSE Robot Avatar" className="character-image-secondary" />
              <motion.div 
               className="speech-bubble secondary"
               initial={{ scale: 0, opacity: 0 }}

@@ -28,9 +28,9 @@
   transform: scale(2) translate(-60%, -50%);
 }
 
-.zoom-marketing {
-  transform: scale(2) translate(-40%, -40%);
-}
+
+
+
 .zoom-location {
   transform: scale(4); /* 2배 확대*/
   transition: transform 2s ease;
@@ -126,5 +126,5 @@ button:hover {
 .zoom-생산-quality,
 .zoom-생산-manager,
 .zoom-생산-engineer{
-  transform: scale(5) translate(10%,-10%);
+  transform: scale(4) translate(10%, 1%);
 }

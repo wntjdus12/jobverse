@@ -1,76 +1,144 @@
 /* TransitionSection.css */
-.transition-section-video {
+/* 노트북 목업 이미지를 사용하여 레이아웃을 구성합니다. */
+.transition-section-laptop {
   position: relative;
-  height: 80vh;
-  min-height: 600px;
-  width: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
+  padding: 80px 20px;
+  background-color: #f8f8f8;
+  color: #333;
   text-align: center;
+  overflow: hidden;
 }
 
-.video-background-transition {
+/* --- 노트북 상단 텍스트 스타일 --- */
+.laptop-top-text {
+  position: absolute;
+  /* 텍스트를 노트북 상단 왼쪽으로 배치 */
+  top: 4%;
+  left: 10%;
+  z-index: 10;
+  text-align: left; /* 텍스트 정렬을 왼쪽으로 변경 */
+  color: #1d1d1f; /* Mac 스타일과 유사한 진한 회색 */
+}
+
+.laptop-top-text .main-text {
+  /* 글자 크기를 더 크게 조정하고, 폰트 굵기를 맞춤 */
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800; /* Mac 스타일과 유사한 매우 굵은 폰트 */
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.laptop-top-text .sub-text {
+  font-size: clamp(0.8rem, 1.5vw, 1rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: #777;
+}
+
+
+.laptop-container {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 90px;
+  padding-bottom: 50%;
+
+  background-image: url("macbook.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.laptop-screen-content {
+  position: absolute;
+  top: 10%;
+  left: 16.1%;
+  width: 67.6%;
+  height: 58%;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.laptop-video {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
   z-index: 1;
 }
 
-.video-background-transition video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.video-overlay-dark {
+.screen-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background-color: rgba(10, 10, 20, 0.6);
+  z-index: 2;
 }
 
 .content-container-transition {
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
   color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
 }
 
 .transition-text-video {
-  font-size: 3.5vw; /* 이전보다 약간 작게 조절하여 균형을 맞춤 */
+  font-size: clamp(1rem, 3.5vw, 2.5rem);
   font-weight: 800;
-  line-height: 1.4;
-  margin: 0;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
   text-shadow: 0px 4px 15px rgba(0, 0, 0, 0.4);
 }
 
-/* [추가] 작은 글씨 스타일 */
 .transition-subtext-video {
-  font-size: 1.1rem;
-  font-weight: 500;
-  max-width: 650px; /* 텍스트가 너무 길어지지 않도록 최대 너비 설정 */
-  margin: 1.5rem auto 0 auto; /* 위, 좌우, 아래 마진 */
-  line-height: 1.8;
-  color: rgba(255, 255, 255, 0.85); /* 큰 글씨보다 약간 연한 색상 */
+  font-size: clamp(0.7rem, 1.5vw, 1rem);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
   text-shadow: 0px 2px 8px rgba(0, 0, 0, 0.3);
+  margin-bottom: 1.5rem;
+  padding: 0 10%;
+}
+
+.ain-text {
+  font-size: clamp(0.7rem, 1.5vw, 1rem);
 }
 
 .map-button {
-  display: inline-block;
-  /* [수정] 작은 글씨가 추가되었으므로 버튼과의 간격을 더 줍니다. */
-  margin-top: 3rem; 
-  background-color: #5865F2;
-  color: #ffffff;
-  font-size: 1.2rem;
-  font-weight: 700;
-  padding: 1rem 2.5rem;
+  padding: 8px 16px;
+  background-color: #5865f2;
+  color: #fff;
+  border: none;
   border-radius: 50px;
+  font-weight: 600;
+  font-size: clamp(0.8rem, 1.2vw, 1rem);
   text-decoration: none;
-  box-shadow: 0px 5px 20px rgba(88, 101, 242, 0.3);
-  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.map-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(88, 101, 242, 0.4);
 }

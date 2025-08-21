@@ -5,5 +5,9 @@
     "gsap": "^3.13.0",
     "react-icons": "^5.5.0",
     "uvicorn": "^0.0.1-security"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7"
   }
 }

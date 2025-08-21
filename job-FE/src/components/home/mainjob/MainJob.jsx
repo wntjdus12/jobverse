@@ -65,7 +65,7 @@ const MainJob = () => {
                     window.location.href = "https://jobverse.site/interview/";}} >가상 면접</a>
 
           <a href="#guide"  onClick={() => {
-            window.location.href = "https://jobverse.site/text/";
+            window.location.href = "https://jobverse.site/document/document-landing";
           }}>AI 취업 코칭</a>
         </nav> 
         <button className="play-button" onClick={(e) => {navigate("/map")}}>맵 바로가기</button>

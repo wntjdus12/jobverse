@@ -3,15 +3,21 @@
 .video-section {
   position: relative;
   width: 100%;
-  height: 70vh; /* 섹션의 높이. 필요에 따라 조절하세요. */
-  min-height: 500px;
+  height: 60vh; /* 섹션의 높이. 필요에 따라 조절하세요. */
+  min-height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   color: #ffffff;
   font-family: 'Pretendard', sans-serif; /* 폰트는 프로젝트에 맞게 변경하세요 */
+  border-top-left-radius: 300px;
+  border-top-right-radius: 300px;
+  /* border-bottom-left-radius: 300px;
+  border-bottom-right-radius: 300px; */
+  background-color: #e9f1f8;
 }
+
 
 /* 배경 영상 관련 스타일 */
 .video-background {
@@ -36,7 +42,7 @@
   width: 100%;
   height: 100%;
   /* 스크린샷과 유사한 보라색 오버레이 */
-  background-color: rgba(88, 101, 242, 0.85); 
+  background-color: rgba(119, 129, 232, 0.85); 
 }
 
 /* 콘텐츠 영역 스타일 */

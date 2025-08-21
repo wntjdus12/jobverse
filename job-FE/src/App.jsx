@@ -9,6 +9,7 @@ import PrivateRoute from "./route/PrivateRoute";
 import api from "./utils/api";
 import MainPage from "./pages/MainPage";
 import MyPage from "./pages/MyPage";
+import MusicPage from "./components/vid/MusicPage";
 
 
 
@@ -40,6 +41,8 @@ useEffect(()=> {
       <Route path="/map" element={<MapPage />} />
       <Route path="/login" element={<LoginPage user={user} setUser={setUser}/>} />
       <Route path="/mypage" element={<MyPage/>} />
+      <Route path="/musicpage" element={<MusicPage/>} />
+      
     </Routes>
   );
 }

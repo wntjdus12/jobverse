@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './Interview.css';
 import Modal from './Modal';
 import EndModal from './EndModal';
@@ -7,6 +7,7 @@ import interviewerA from '../assets/interviewerA.png';
 import interviewerB from '../assets/interviewerB.png';
 import interviewerC from '../assets/interviewerC.png';
 import userProfile from '../assets/user.png';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Interview = () => {
   const [showModal, setShowModal] = useState(true);
@@ -23,9 +24,12 @@ const Interview = () => {
   const [firstAnswer, setFirstAnswer] = useState('');
   const [sessionId, setSessionId] = useState(null);
 
-  // 프론트(8501) → 백엔드(3000)
-  const BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3000/interview';
-  const SUMMARY_BASE = BASE_URL.replace(/\/+interview\/?$/, '');
+  // ✅ 프론트(8501) → 백엔드(3000) : 절대경로 사용
+  const BASE_URL = import.meta.env.VITE_API_BASE || '/interview-api';
+  const SUMMARY_BASE = BASE_URL; // SummaryModal은 `${baseUrl}/summary/:id` 로 호출해야 함
+
+  // 🔊 자동재생 정책 우회 플래그
+  const [ttsEnabled, setTtsEnabled] = useState(false);
 
   const interviewerIds = ['C', 'A', 'B'];
   const prevInterviewerRef = useRef(null);
@@ -33,6 +37,7 @@ const Interview = () => {
   const audioRef = useRef(null);
   const ttsQueue = useRef([]);
   const isSpeaking = useRef(false);
+  const audioUnlockedRef = useRef(false); 
 
   const interviewerInfo = {
     A: { name: '인사팀', image: interviewerA },
@@ -63,8 +68,25 @@ const Interview = () => {
     return res;
   };
 
+  // 🔓 첫 사용자 동작 시 오디오 정책 해제
+  const unlockAudio = async () => {
+    try {
+      // WebAudio로 1프레임짜리 무음 재생
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+      // Safari 대비 resume
+      if (ctx.state === 'suspended') await ctx.resume();
+    } catch (e) {
+      console.warn('Audio unlock skipped:', e);
+    }
+  };
+
   const playNextInQueue = async () => {
-    if (isSpeaking.current || ttsQueue.current.length === 0) return;
+    if (!ttsEnabled || isSpeaking.current || ttsQueue.current.length === 0) return;
     const { text, role } = ttsQueue.current.shift();
     isSpeaking.current = true;
     try {
@@ -88,7 +110,10 @@ const Interview = () => {
         playNextInQueue();
       };
 
-      audio.play().catch(console.warn);
+      await audio.play().catch(err => {
+        console.warn('TTS play blocked:', err);
+        // 재생이 막히면 큐를 유지한 채 enable만 기다림
+      });
     } catch (err) {
       console.error('🔈 TTS 재생 오류:', err);
       isSpeaking.current = false;
@@ -178,7 +203,7 @@ const Interview = () => {
     }
   };
 
-  // 첫 질문: 인자로 받은 값 우선 사용 (UI 변경 없음)
+  // 첫 질문
   const pickFirstInterviewer = async (nameParam, jobParam) => {
     const name = nameParam ?? username;
     const role = jobParam ?? jobRole;
@@ -187,7 +212,6 @@ const Interview = () => {
     const res = await safeFetch(`${BASE_URL}/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // 🔧 중요: 백엔드 스키마와 키 통일
       body: JSON.stringify({ userName: name, jobRole: role })
     });
     const data = await res.json();
@@ -244,40 +268,51 @@ const Interview = () => {
       setIsRecording(false);
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
-    setMediaRecorder(recorder);
-    audioChunksRef.current = [];
-    setIsRecording(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      audioChunksRef.current = [];
+      setIsRecording(true);
 
-    recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
-    recorder.onstop = async () => {
-      const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      const formData = new FormData();
-      formData.append('file', blob, 'recording.webm');
-      formData.append('user', username);
+      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('file', blob, 'recording.webm');
+        formData.append('user', username);
 
-      try {
-        const res = await safeFetch(`${BASE_URL}/stt`, {
-          method: 'POST',
-          body: formData
-        });
-        const data = await res.json();
-        if (data.text) setInput(data.text);
-      } catch (err) {
-        console.error('STT 오류:', err);
+        try {
+          const res = await safeFetch(`${BASE_URL}/stt`, {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+          if (data.text) setInput(data.text);
+        } catch (err) {
+          console.error('STT 오류:', err);
+        }
+      };
+
+      recorder.start();
+    } catch (e) {
+      console.warn('녹음 권한 거부/오류:', e);
+      if (e?.name === 'NotAllowedError') {
+        alert('마이크 권한을 허용해 주세요. 브라우저 주소창 우측의 권한 설정을 확인하세요.');
+      } else {
+        alert('마이크 초기화에 실패했습니다.');
       }
-    };
-
-    recorder.start();
+    }
   };
 
-  const handleNameSubmit = (name, job) => {
+  const handleNameSubmit = async (name, job) => {
     setUsername(name);
     setJobRole(job);
     setShowModal(false);
-    // ⬇️ DOM 구조 변경 없이, 즉시 인자 사용
-    pickFirstInterviewer(name, job);
+
+    // 🔓 오디오 정책 해제 & TTS 허용
+    await unlockAudio();
+    setTtsEnabled(true);
   };
 
   const handleInterviewEnd = () => {
@@ -290,9 +325,18 @@ const Interview = () => {
     setShowSummary(true);
   };
 
+  // ✅ 추가된 useEffect: TTS가 활성화되면 첫 질문을 요청
+  useEffect(() => {
+    if (ttsEnabled && username && jobRole && chat.length === 0) {
+      pickFirstInterviewer(username, jobRole);
+    }
+  }, [ttsEnabled, username, jobRole, chat.length]);
+
   return (
     <div className="interview-fullscreen">
-      {showModal && <Modal onSubmit={handleNameSubmit} />}
+      <AnimatePresence>
+        {showModal && <Modal onSubmit={handleNameSubmit} />}
+      </AnimatePresence>
 
       {showEndModal && (
         <EndModal
@@ -302,6 +346,7 @@ const Interview = () => {
         />
       )}
 
+      {/* ✅ 요약 API는 /interview-api/summary/:id 로 호출되도록 SummaryModal이 구현되어 있어야 함 */}
       <SummaryModal
         open={showSummary}
         sessionId={sessionId}

@@ -1,4 +1,7 @@
+/* --- 전역 스타일 --- */
+/* 더 현대적인 폰트와 부드러운 배경, 그리고 적절하게 제약된 컨테이너 */
 .chatbot-wrapper {
+    font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -6,7 +9,7 @@
     width: 100%;
     max-width: 100vw;
     height: 100vh;
-    background-color: #f4f0fa;
+    background-color: #d7dce2; /* 밝고 은은한 배경 */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -14,178 +17,236 @@
 
 .chatbot-container {
     width: 100%;
-    max-width: 700px;
-    height: 90vh;
+    max-width: 600px; /* 더 집중된 느낌을 위해 약간 좁게 설정 */
+    height: 85vh;
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+    border-radius: 12px; /* 덜 과감한 둥근 모서리 */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08); /* 더 부드럽고 우아한 그림자 */
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    border: 1px solid #e0e0e0; /* 미묘한 경계를 위한 테두리 */
 }
 
+/* --- 헤더 --- */
+/* 깔끔하고 단순하며 미묘한 테두리가 있는 헤더 */
 .chatbot-header {
-    background: #8e44ad;
-    color: white;
-    padding: 1rem;
-    font-size: 1.2rem;
-    font-weight: bold;
+    background: #b4c1cb;
+    color: #333333;
+    padding: 1.2rem;
+    font-size: 1.15rem;
+    font-weight: 600;
     text-align: center;
+    border-bottom: 1px solid #f0f0f0;
 }
 
+/* --- 메시지 영역 --- */
 .chatbot-messages {
     flex: 1;
-    padding: 1rem;
+    padding: 1.5rem;
     overflow-y: auto;
     overflow-x: hidden;
     background: #fafafa;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem; /* 메시지 간 일정한 간격 */
 }
 
+/* 최신 브라우저를 위한 스크롤바 */
+.chatbot-messages::-webkit-scrollbar {
+    width: 8px;
+}
+.chatbot-messages::-webkit-scrollbar-thumb {
+    background-color: #d3d3d3;
+    border-radius: 10px;
+}
+.chatbot-messages::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/* --- 메시지 버블 --- */
 .chat-message {
     display: flex;
-    align-items: flex-end;
-    margin-bottom: 1rem;
+    align-items: flex-start;
     position: relative;
+    max-width: 90%;
 }
 
 .chat-message.bot {
-    justify-content: flex-start;
     flex-direction: row;
-    gap: 0.5rem;
+    align-self: flex-start;
+    gap: 12px;
 }
 
+/* 사용자 메시지에 대한 flex-direction: row-reverse; 설정은 유지 */
 .chat-message.user {
-    justify-content: flex-end;
     flex-direction: row;
-    gap: 0.5rem;
+    align-self: flex-end;
+    gap: 15px;
+    margin-top: 60px;
 }
 
 .chat-bubble {
-    padding: 0.6rem 1rem;
-    border-radius: 16px;
-    max-width: 75%;
-    font-size: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 18px;
+    font-size: 0.95rem;
     white-space: pre-line;
     word-break: break-word;
     position: relative;
-    line-height: 1.4;
-    display: inline-block;
+    line-height: 1.5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+/* 봇 버블은 밝은 배경과 단일 색상의 텍스트 */
 .bot-bubble {
-    background-color: #f0eef7;
-    border-radius: 16px 16px 16px 6px;
-    margin-right: 4px;
+    background-color: #e9eff5;
+    color: #333;
+    border-radius: 18px 18px 18px 6px;
 }
 
+/* 사용자 버블은 미묘한 악센트 컬러와 뚜렷한 텍스트 */
 .user-bubble {
-    background-color: #d3baf7;
-    border-radius: 16px 16px 6px 16px;
-    text-align: right;
-    order: 1;
+    background-color: #6e92b2;
+    color: #ffffff;
+    border-radius: 18px 18px 6px 18px;
+    font-weight: 500;
 }
 
 .chat-icon {
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     flex-shrink: 0;
-    margin: 0 0.2rem;
+    border: 2px solid #e0e0e0;
 }
 
-.chat-message.user .chat-icon {
-    order: 2;
-    margin-left: 0.5rem;
-    margin-right: 0;
-}
+/* 원래 코드는 .chat-message.user .chat-icon에 order: 2가 있었는데,
+   flex-direction: row-reverse;만으로도 충분하므로 불필요한 코드는 삭제 */
 
-.chat-message.bot .speaker-btn-outside {
-    align-self: center;
-    margin-left: 4px;
-    background: transparent;
-    border: none;
-    font-size: 1.2rem;
-    color: #8e44ad;
-    cursor: pointer;
-    user-select: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
+/* --- 스피커 버튼 --- */
+/* 봇 버블 옆에 위치하여 더 깔끔하게 보임 */
+.bot-bubble-wrapper {
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+    gap: 8px;
+}
+
+.speaker-btn-next {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #777;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s, transform 0.2s;
     outline: none;
-    position: relative;
 }
 
-.chat-message.bot .speaker-btn-outside:active::after {
-    content: '';
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background-color: #ba7dde;
-    border-radius: 50%;
-    bottom: 2px;
-    right: 2px;
+.speaker-btn-next:hover {
+    color: #5a7d9b;
+    transform: scale(1.1);
 }
 
+.speaker-btn-next:disabled {
+    cursor: not-allowed;
+    color: #ccc;
+}
+
+/* --- 입력 영역 --- */
 .chatbot-input {
     display: flex;
     align-items: center;
-    padding: 1rem;
-    background: #f9f9fc;
-    border-top: 1px solid #ddd;
-    gap: 0.6rem;
+    padding: 1.25rem;
+    background: #ffffff;
+    border-top: 1px solid #e0e0e0;
+    gap: 10px;
 }
 
+/* 현대적이고 알약 모양의 입력 필드 */
 .chat-input {
     flex: 1;
-    height: 40px;
+    min-height: 48px;
     resize: none;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
-    font-size: 1rem;
+    border: 1px solid #dcdcdc;
+    border-radius: 24px;
+    padding: 0.75rem 1.2rem;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.chat-input:focus {
+    outline: none;
+    border-color: #5a7d9b;
+    box-shadow: 0 0 0 3px rgba(90, 125, 155, 0.2);
+}
+
+/* 깔끔하고 통일된 스타일의 버튼들 */
 .mic-btn,
 .send-btn {
-    height: 40px;
-    padding: 0 1rem;
-    font-size: 1rem;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    font-size: 1.2rem;
     border: none;
-    border-radius: 8px;
+    border-radius: 50%;
     cursor: pointer;
-    background-color: #8e44ad;
-    color: white;
+    background-color: #859fb5;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.send-btn:hover, .mic-btn:hover {
+    background-color: #4a6a84;
+}
+
+.send-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
 }
 
 .mic-btn.recording {
-    background-color: #c0392b;
+    background-color: #e74c3c;
+    animation: pulse 1.5s infinite;
 }
 
-@media screen and (max-width: 500px) {
+/* 녹음 버튼을 위한 애니메이션 */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+/* --- 반응형 조정 --- */
+@media screen and (max-width: 600px) {
     .chatbot-container {
-        max-width: 100%;
-        height: 95vh;
+        height: 100vh;
         border-radius: 0;
+        max-width: 100%;
+        border: none;
     }
-
+    .chatbot-messages {
+        padding: 1rem;
+    }
     .chat-bubble {
-        font-size: 0.95rem;
-        padding: 0.5rem 0.9rem;
+        font-size: 0.9rem;
+        padding: 0.8rem 1rem;
     }
-
     .chat-icon {
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
     }
-
-    .chat-message.bot .speaker-btn-outside {
-        font-size: 1rem;
-        margin-left: 3px;
-        width: 28px;
-        height: 28px;
+    .chatbot-input {
+        padding: 0.75rem;
+    }
+    .chat-input {
+        min-height: 45px;
+    }
+    .mic-btn, .send-btn {
+        width: 45px;
+        height: 45px;
     }
 }

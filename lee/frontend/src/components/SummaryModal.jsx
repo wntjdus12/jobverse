@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import './SummaryModal.css';
 
 export default function SummaryModal({
   open = false,
   sessionId,
   onClose,
-  onMore,           // 리포트 페이지로 이동
-  baseUrl = '',     // 예: import.meta.env.VITE_API_BASE || 'http://localhost:3000'
-  authHeaders       // 예: { Authorization: 'Bearer ...' }
+  onMore,                 // 리포트 페이지로 이동
+  baseUrl = '/interview-api', // ✅ 기본값: 절대 경로 (/interview-api)
+  authHeaders             // 예: { Authorization: 'Bearer ...' }
 }) {
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState('');
@@ -18,6 +18,16 @@ export default function SummaryModal({
   const boxRef = useRef(null);
   const firstBtnRef = useRef(null);
   const lastBtnRef = useRef(null);
+
+  // 안전한 URL 결합 (중복/누락 슬래시 방지)
+  const joinUrl = useCallback((...parts) => {
+    return parts
+      .map((p, i) => {
+        const s = String(p ?? '');
+        return i === 0 ? s.replace(/\/+$/, '') : s.replace(/^\/+/, '');
+      })
+      .join('/');
+  }, []);
 
   // 모달 열릴 때 박스에 포커스
   useEffect(() => {
@@ -31,39 +41,48 @@ export default function SummaryModal({
   useEffect(() => {
     if (!open || !sessionId) return;
 
-    const ctrl = new AbortController();
-    const signal = ctrl.signal;
+    const controller = new AbortController();
+    const signal = controller.signal;
 
     setLoading(true);
     setError('');
     setSummary('');
     setBullets([]);
 
-    const apiBase = (baseUrl || '').replace(/\/+$/, '');
-    const url = `${apiBase}/interview/summary/${encodeURIComponent(sessionId)}`;
+    // ✅ 여기서 최종 URL을 `/interview-api/summary/:id` 로 생성
+    const API_BASE = (baseUrl || '/interview-api').replace(/\/+$/, '');
+    const url = joinUrl(API_BASE, 'summary', encodeURIComponent(sessionId));
 
-    fetch(url, { headers: { ...(authHeaders || {}) }, signal })
-      .then(async (r) => {
-        if (!r.ok) {
-          const txt = await r.text().catch(() => '');
-          throw new Error(txt || '요약 API 실패');
+    (async () => {
+      try {
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            ...(authHeaders || {}),
+          },
+          signal,
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          throw new Error(`HTTP ${res.status} ${res.statusText} – ${txt || '요약 API 실패'}`);
         }
-        return r.json();
-      })
-      .then((d) => {
-        setSummary(d.summary || '');
-        setBullets(Array.isArray(d.bullets) ? d.bullets : []);
-      })
-      .catch((e) => {
-        if (signal.aborted) return;
-        setError(e?.message || '요약을 불러오지 못했어요.');
-      })
-      .finally(() => {
-        if (!signal.aborted) setLoading(false);
-      });
 
-    return () => ctrl.abort();
-  }, [open, sessionId, baseUrl]);
+        const data = await res.json();
+        setSummary(data.summary || '');
+        setBullets(Array.isArray(data.bullets) ? data.bullets : []);
+      } catch (e) {
+        if (signal.aborted) return;
+        console.error('[SummaryModal] fetch error:', e);
+        setError(e?.message || '요약을 불러오지 못했어요.');
+      } finally {
+        if (!signal.aborted) setLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [open, sessionId, baseUrl, joinUrl]);
 
   // 전역 ESC
   useEffect(() => {
@@ -83,13 +102,11 @@ export default function SummaryModal({
     if (!first || !last) return;
 
     if (e.shiftKey) {
-      // 뒤로 이동 중, 첫 요소에서 더 뒤로 못 가게
       if (document.activeElement === first) {
         e.preventDefault();
         last.focus();
       }
     } else {
-      // 앞으로 이동 중, 마지막 요소에서 더 앞으로 못 가게
       if (document.activeElement === last) {
         e.preventDefault();
         first.focus();
@@ -103,13 +120,13 @@ export default function SummaryModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="summary-title"
-      onClick={onClose}                 // 배경 클릭 닫기
+      onClick={onClose} // 배경 클릭 닫기
     >
       <div
         ref={boxRef}
         className="summary-box"
         onClick={(e) => e.stopPropagation()} // 내부 클릭 전파 방지
-        tabIndex={-1}                        // 컨테이너 포커스 가능 (outline은 CSS로 숨김)
+        tabIndex={-1}                        // 컨테이너 포커스 가능
         onKeyDown={onKeyDownTrap}
       >
         {/* 헤더 */}

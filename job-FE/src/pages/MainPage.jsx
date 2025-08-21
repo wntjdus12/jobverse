@@ -16,9 +16,10 @@ function MainPage() {
     <main className="overflow-x-hidden">
       {/* <Header/> */}
       <MainJob />
-      <FeatureSection/>
       <TransitionSection />
-      <ScrollSection />     
+      <FeatureSection/>
+      
+    
       <CardNewsSection />
       <VideoBackgroundSection />
       <NewsletterSection />

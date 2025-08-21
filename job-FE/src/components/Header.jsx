@@ -48,17 +48,17 @@ const Header = () => {
     >
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between relative">
         {/* 로고 */}
-        <div className="text-2xl font-extrabold" style={{ color: "#bf84ff" }}>
+        <div className="text-2xl font-extrabold" style={{ color: "#333333" }}>
           jobverse
         </div>
 
         {/* 네비게이션 */}
         <nav className="hidden md:flex gap-8 text-gray-800 font-medium items-center relative z-50">
           {/* 마이페이지 */}
-          {/* AI 면접 (드롭다운 토글) */}
+          {/* 글씨 색상을 #333333으로 변경 */}
           <a
             href="#intro"
-            style={{ textDecoration: "none", color: "#bf84ff" }}
+            style={{ textDecoration: "none", color: "#333333" }}
             className="hover:text-purple-600 transition"
             onClick={(e) => {
               e.preventDefault();
@@ -67,47 +67,49 @@ const Header = () => {
           >
             마이페이지
           </a>
-        <div className="relative" ref={dropdownRef}>
-          <div
-            style={{ textDecoration: "none", color: "#bf84ff" }} // ✅ 마이페이지와 동일
-            className="hover:text-purple-600 transition font-medium" // ✅ 동일한 클래스
-            onClick={() => setDropdownOpen((prev) => !prev)}
-          >
-            AI 면접
-            <span className="text-sm">{dropdownOpen ? "▲" : "▼"}</span>
-          </div>
-
-          {dropdownOpen && (
-            <div className="absolute left-0 top-full mt-3 w-40 bg-white border border-gray-200 rounded-xl shadow-2xl z-[999] overflow-hidden animate-fade-in">
-              <div
-                onClick={() => {
-                  window.location.href = "https://jobverse.site/interview/";
-                  setDropdownOpen(false);
-                }}
-                className="px-3 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 cursor-pointer"
-              >
-                가상 면접
-              </div>
-              <div
-                onClick={() => {
-                  navigate("/ai-report");
-                  setDropdownOpen(false);
-                }}
-                className="px-3 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 cursor-pointer"
-              >
-                분석 리포트 보기
-              </div>
+          
+          {/* AI 면접 (드롭다운 토글) */}
+          <div className="relative" ref={dropdownRef}>
+            <div
+              style={{ textDecoration: "none", color: "#333333" }} // 글씨 색상을 #333333으로 변경
+              className="hover:text-purple-600 transition font-medium cursor-pointer" // `cursor-pointer` 클래스 추가
+              onClick={() => setDropdownOpen((prev) => !prev)}
+            >
+              AI 면접
+              <span className="text-sm">{dropdownOpen ? "▲" : "▼"}</span>
             </div>
-          )}
-        </div>
+
+            {dropdownOpen && (
+              <div className="absolute left-0 top-full mt-3 w-40 bg-white border border-gray-200 rounded-xl shadow-2xl z-[999] overflow-hidden animate-fade-in">
+                <div
+                  onClick={() => {
+                    window.location.href = "https://jobverse.site/interview/";
+                    setDropdownOpen(false);
+                  }}
+                  className="px-3 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 cursor-pointer"
+                >
+                  가상 면접
+                </div>
+                <div
+                  onClick={() => {
+                    navigate("/ai-report");
+                    setDropdownOpen(false);
+                  }}
+                  className="px-3 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 cursor-pointer"
+                >
+                  분석 리포트 보기
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* AI 취업 코칭 */}
           <a
             onClick={() => {
-            window.location.href = "https://jobverse.site/text/";
+            window.location.href = "https://jobverse.site/document/document-landing";
           }}
-            style={{ textDecoration: "none", color: "#bf84ff" }} // ✅ 마이페이지와 동일
-            className="hover:text-purple-600 transition font-medium" // ✅ 동일한 클래스
+            style={{ textDecoration: "none", color: "#333333" , }} // 글씨 색상을 #333333으로 변경
+            className="hover:text-purple-600 transition font-medium cursor-pointer"
           >
             AI 취업 코칭
           </a>

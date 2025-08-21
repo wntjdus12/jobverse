@@ -32,7 +32,7 @@ const totalParticipants = jobWorlds.reduce((sum, job) => sum + job.participants,
 
 const VideoBackgroundSection = () => {
   return (
-    <section className="video-section">
+    <section className="video-section bg">
       {/* 1. 배경 동영상 및 색상 오버레이 */}
       <div className="video-background">
         <video autoPlay loop muted playsInline>

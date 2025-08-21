@@ -13,6 +13,7 @@ const profileSchema = Schema({
     phone: {type: String},
     intro: {type: String},
     photo: {type: String},
+    jobTitle: {type: String}, // ✅ 희망 직무 필드 추가
     education: [
         {
             level: {type: String},

@@ -34,7 +34,7 @@ const Footer = () => {
             <tbody>
               <tr>
                 <td>(주)잡버스</td>
-                <td>대표: 주서연</td>
+                <td>대표: Kibwa</td>
                 <td>주소: 서울특별시 강남구 서초시</td>
               </tr>
               <tr>
@@ -49,7 +49,7 @@ const Footer = () => {
         {/* 오른쪽 플로팅 버튼들은 App.jsx 등에서 별도로 관리하는 것이 더 좋습니다. */}
         {/* 예시로만 포함합니다. */}
         <div className="floating-buttons">
-          <a href="#" className="canvas-button">CANVAS</a>
+
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="top-button" aria-label="맨 위로 이동">
             &uarr;
           </button>

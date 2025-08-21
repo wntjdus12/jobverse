@@ -5,29 +5,48 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development'
 
+  // 인터뷰 전용 개발 서버: /interview/ 하위에서 동작
+  const DEV_PORT = Number(process.env.VITE_DEV_PORT || 8501)
+  const DEV_BASE = process.env.VITE_DEV_BASE || '/interview/'
+
   return {
     plugins: [react()],
 
-    // 로컬은 '/', 배포 빌드만 '/interview/' (뒤에 슬래시 포함)
-    base: isDev ? '/' : '/interview/',
+    // dev/prod 모두 /interview/ 베이스
+    base: isDev ? DEV_BASE : '/interview/',
 
-    // 로컬 개발 서버 설정
+    resolve: {
+      dedupe: ['react', 'react-dom'],
+    },
+
     server: isDev
       ? {
           host: '0.0.0.0',
-          port: 8501,
+          port: DEV_PORT,
           strictPort: true,
-          // 로컬에서는 도메인/WSS/HMR 커스텀 금지 (기본 ws + localhost 사용)
+
+          allowedHosts: ['jobverse.site', 'www.jobverse.site'],
+
+          // ✅ Nginx 뒤에서 HMR(WebSocket) 연결
+          hmr: {
+            protocol: 'wss',          // HTTPS면 wss
+            host: 'jobverse.site',     // 공개 도메인
+            clientPort: 443,           // 클라이언트가 접속할 포트(프록시 포트)
+            path: '/interview',        // Nginx로 노출되는 WS 경로
+          },
+
+          cors: true,
+
+          // ✅ 백엔드가 /interview-api/* 를 그대로 받음(app.js)
           proxy: {
-            // 프론트에서 fetch('/interview-api/...') 호출 시
             '/interview-api': {
               target: 'http://localhost:3000',
               changeOrigin: true,
-              // 백엔드가 '/start'로 받는 구조라면 아래 주석 해제:
+              // ❗️치환 불필요: 백엔드가 이미 /interview-api 프리픽스를 받음
               // rewrite: p => p.replace(/^\/interview-api/, ''),
             },
           },
         }
-      : undefined, // 배포에선 vite dev 서버 미사용(정적 빌드만 사용)
+      : undefined,
   }
 })

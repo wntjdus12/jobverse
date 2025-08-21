@@ -1,9 +1,18 @@
 /* components/Interview.css */
 
+/*
+ * Apple Vision Pro 스타일의 글래스모피즘 UI
+ * - 배경을 어둡고 흐릿하게 처리하여 UI 요소를 부각
+ * - UI 요소는 반투명한 유리 질감과 부드러운 그림자
+ */
+
+/* 전체 화면 배경 */
 .interview-fullscreen {
     width: 100vw;
     height: 100vh;
-    background: #f5f5fa;
+    /* 배경 이미지 추가 */
+    background: url('/root/jobverse/lee/frontend/public/bo.png') no-repeat center center fixed;
+    background-size: cover;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -11,61 +20,79 @@
     padding: 2rem;
     box-sizing: border-box;
     overflow: hidden;
+    color: #ffffff;
+    /* 배경을 흐릿하게 만듭니다. */
+    backdrop-filter: blur(10px);
 }
 
-/* 상단 면접관 카드 */
+/* 상단 면접관 카드 컨테이너 */
 .interviewers {
     display: flex;
     justify-content: center;
-    gap: 2rem;
-    margin-bottom: 1rem;
+    gap: 1.5rem; /* 간격 조절 */
+    margin-bottom: 5rem;
+    margin-left: 2rem;
 }
 
+/* 면접관 개별 카드 */
 .interviewer-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #fff;
-    border-radius: 16px;
+    /* 글래스모피즘 스타일 적용 */
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px; /* 더 둥근 모서리 */
     padding: 1rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    width: 110px;
-    transition: transform 0.2s ease;
+    margin-top: 8rem;
+    margin-left: 2rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    width: 130px; /* 카드 크기 조절 */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .interviewer-card.active {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 4px rgba(146, 84, 222, 0.2);
+    transform: scale(1.1); /* 활성 카드 강조 */
+    box-shadow: 0 0 0 4px #8a2be2; /* 활성 카드 테두리 색상 */
 }
 
 .interviewer-card img {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
     object-fit: cover;
-    border-radius: 12px;
-    margin-bottom: 0.5rem;
+    border-radius: 50%; /* 원형 이미지 */
+    margin-bottom: 0.75rem;
+    border: 3px solid rgba(255, 255, 255, 0.2);
 }
 
 .interviewer-card p {
     font-weight: 600;
-    font-size: 0.95rem;
-    color: #333;
+    font-size: 0.9rem;
+    color: #f0f0f0;
 }
 
 /* 중앙 질문창 */
 .question-display {
-    background-color: #fff;
-    border-radius: 16px;
+    /* 글래스모피즘 스타일 적용 */
+    background-color: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
     padding: 1.5rem 2rem;
-    width: 70%;
-    min-height: 120px;
+    width: 80%;
+    max-width: 900px; /* 최대 너비 설정 */
+    min-height: 150px;
     text-align: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
     font-size: 1.2rem;
-    color: #222;
+    color: #ffffff;
     display: flex;
     justify-content: center;
     align-items: center;
+    line-height: 1.6;
+    margin-left: 90px;
+    margin-bottom: 110px;
 }
 
 /* 하단 사용자 영역 */
@@ -73,53 +100,69 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: 1.5rem;
+    margin-bottom: 20rem;
+    
 }
 
 .user-card {
-    width: 120px;
-    height: 120px;
+    width: 80px;
+    height: 80px;
     object-fit: cover;
-    border-radius: 16px;
-    background: #fff;
+    border-radius: 50%; /* 원형 이미지 */
+    background: rgba(255, 255, 255, 0.2);
     padding: 0.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin-left: 80px;
+    
 }
 
 /* 입력창 및 버튼들 */
 .user-input-box {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.75rem;
     align-items: center;
-    margin-top: 0.5rem;
+    margin-left: 120px;
 }
 
 .user-input-box input {
-    width: 400px;
-    padding: 0.75rem 1rem;
+    width: 450px;
+    padding: 0.8rem 1.2rem;
     font-size: 1rem;
-    border-radius: 12px;
-    border: 1px solid #ccc;
+    /* 글래스모피즘 스타일 적용 */
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
     outline: none;
     transition: 0.2s;
+    
+}
+
+.user-input-box input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .user-input-box input:focus {
-    border-color: #9254de;
-    box-shadow: 0 0 0 3px rgba(146, 84, 222, 0.2);
+    border-color: #8a2be2;
+    box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.4);
 }
 
 .user-input-box button {
-    font-size: 1.2rem;
-    padding: 0.75rem 1rem;
-    background-color: #9254de;
+    font-size: 1rem;
+    width: 50px;
+    height: 50px;
+    background-color: rgba(150, 108, 188, 0.6);
     color: #fff;
     border: none;
-    border-radius: 10px;
+    border-radius: 50%;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    padding-right: 20px;
 }
 
 .user-input-box button:hover {
-    background-color: #7e3fc4;
+    background-color: #8a2be2;
+    transform: scale(1.05);
 }
