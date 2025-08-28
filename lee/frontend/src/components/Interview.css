@@ -83,16 +83,62 @@
     width: 80%;
     max-width: 900px; /* 최대 너비 설정 */
     min-height: 150px;
-    text-align: center;
+    /* ✅ 세로로 쌓이고 왼쪽 정렬되도록 변경 */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 0.6rem;              /* 질문/답변 간 간격 */
+    text-align: left;         /* 문자 가운데 정렬 제거 */
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
     font-size: 1.2rem;
     color: #ffffff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     line-height: 1.6;
     margin-left: 90px;
     margin-bottom: 110px;
+    /* ✅ 스크롤바 제거 */
+    overflow-y: hidden;
+}
+
+/* ✅ 질문과 답변을 양쪽으로 정렬하기 위한 컨테이너 - 역할 변경 */
+.user-message-container {
+    align-self: flex-end; /* 사용자 메시지를 오른쪽으로 정렬 */
+    width: 100%;
+    text-align: right;
+}
+
+.interviewer-message-container {
+    align-self: flex-start; /* 면접관 메시지를 왼쪽으로 정렬 */
+    width: 100%;
+    text-align: left;
+}
+
+/* 각 메시지 줄 스타일 */
+.question-msg,
+.answer-msg {
+    margin: 0;
+    white-space: pre-wrap;    /* 줄바꿈/공백 유지 */
+    word-break: keep-all;     /* 한글 단어 단위로 줄바꿈 */
+    line-height: 1.6;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    max-width: 90%;
+    display: inline-block;
+}
+
+/* 질문과 답변 메시지 버블 정렬 - 역할 변경 */
+.user-message-container .answer-msg {
+    float: right;
+}
+.interviewer-message-container .question-msg {
+    float: left;
+}
+
+/* 강조 라벨(화자) */
+.question-msg strong,
+.answer-msg strong {
+    font-weight: 700;
 }
 
 /* 하단 사용자 영역 */
@@ -102,7 +148,6 @@
     align-items: center;
     gap: 1.5rem;
     margin-bottom: 20rem;
-    
 }
 
 .user-card {
@@ -115,10 +160,9 @@
     border: 3px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     margin-left: 80px;
-    
 }
 
-/* 입력창 및 버튼들 */
+/* 입력창 및 버튼들 - Flexbox를 사용하여 가로로 정렬 */
 .user-input-box {
     display: flex;
     gap: 0.75rem;
@@ -137,7 +181,6 @@
     color: #ffffff;
     outline: none;
     transition: 0.2s;
-    
 }
 
 .user-input-box input::placeholder {
@@ -149,6 +192,7 @@
     box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.4);
 }
 
+/* 버튼 스타일 */
 .user-input-box button {
     font-size: 1rem;
     width: 50px;
@@ -159,10 +203,22 @@
     border-radius: 50%;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.2s ease;
-    padding-right: 20px;
+    padding-right: 25; /* 기존에 있던 padding-right 제거 */
 }
 
 .user-input-box button:hover {
     background-color: #8a2be2;
     transform: scale(1.05);
+}
+
+/* (선택) 반응형 최적화 */
+@media (max-width: 768px) {
+    .question-display {
+        width: 95%;
+        margin-left: 0;
+        font-size: 1rem;
+    }
+    .user-input-box input {
+        width: 70vw;
+    }
 }

@@ -79,7 +79,7 @@ const LoginPage = ({setUser, user}) => {
         </div>
 
         
-        <div className="divider">
+        {/* <div className="divider">
           <span>OR</span>
         </div>
         <div className="social-buttons">
@@ -98,7 +98,7 @@ const LoginPage = ({setUser, user}) => {
             className="social-icon"
             width={50}
           />
-        </div>
+        </div> */}
 
       </Form>
       </div> 

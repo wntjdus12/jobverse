@@ -3,7 +3,10 @@ import axios from 'axios';
 import { FiPlus, FiSave, FiUser, FiBriefcase, FiBook, FiLink, FiAward } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
-// ---- 강제 적용 스타일 (배경 그라데이션 & 3D 카드 섀도) ----
+// 업로드/다운로드용 백엔드 베이스 (인터뷰 API 프리픽스)
+const API_BASE = import.meta?.env?.VITE_API_BASE || '/interview-api';
+
+// ---- 강제 적용 스타일 ----
 const FORCE_STYLES = `
   .mypage-bg {
     background: linear-gradient(180deg, #ded8e3ff 0%, #cbbfd3 45%, #ffffff 100%) !important;
@@ -21,7 +24,7 @@ const FORCE_STYLES = `
   }
 `;
 
-// 직무 목록 (리렌더 최소화)
+// 직무 목록
 const jobCategories = {
   "생산/엔지니어링": ["생산직", "품질보증", "생산관리자", "설비 유지보수 엔지니어"],
   "마케팅": ["마케팅/광고", "디지털 마케터", "콘텐츠 마케터", "퍼포먼스 마케터", "마케팅 기획자"],
@@ -31,7 +34,8 @@ const jobCategories = {
 
 const MyPage = () => {
   const [profile, setProfile] = useState({
-    photo: '',
+    // 서버 저장용: photoId만 보냄 (photo base64는 절대 전송 X)
+    photoId: '',
     nickname: '',
     email: '',
     phone: '',
@@ -42,6 +46,8 @@ const MyPage = () => {
     awards: [{ title: '', content: '' }],
     certificates: ['']
   });
+  const [photoFile, setPhotoFile] = useState(null);       // 실제 파일
+  const [photoPreview, setPhotoPreview] = useState('');   // 미리보기 URL (GridFS or objectURL)
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -51,32 +57,40 @@ const MyPage = () => {
     const init = async () => {
       try {
         const user = JSON.parse(sessionStorage.getItem("user"));
+        const token = sessionStorage.getItem("token");
         setProfile(prev => ({
           ...prev,
           nickname: user?.name || prev.nickname,
           email: user?.email || prev.email,
         }));
-
-        const token = sessionStorage.getItem("token");
         if (!token) throw new Error("로그인이 필요합니다.");
 
+        // 기존 프로필 불러오기 (백엔드 경로는 기존대로 /api/profile/me 사용)
         const { data } = await axios.get('/api/profile/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
+        const p = data || {};
         setProfile({
-          photo: data.photo || '',
-          nickname: data.nickname || user?.name || '',
-          email: data.email || user?.email || '',
-          phone: data.phone || '',
-          intro: data.intro || '',
-          jobTitle: data.jobTitle || '',
-          education: (data.education && data.education.length ? data.education : [{ level: '', status: '', school: '', major: '' }]),
-          activities: (data.activities && data.activities.length ? data.activities : [{ title: '', content: '' }]),
-          awards: (data.awards && data.awards.length ? data.awards : [{ title: '', content: '' }]),
-          certificates: (data.certificates && data.certificates.length ? data.certificates : [''])
+          photoId: p.photoId || '',
+          nickname: p.nickname || user?.name || '',
+          email: p.email || user?.email || '',
+          phone: p.phone || '',
+          intro: p.intro || '',
+          jobTitle: p.jobTitle || '',
+          education: Array.isArray(p.education) && p.education.length ? p.education : [{ level: '', status: '', school: '', major: '' }],
+          activities: Array.isArray(p.activities) && p.activities.length ? p.activities : [{ title: '', content: '' }],
+          awards: Array.isArray(p.awards) && p.awards.length ? p.awards : [{ title: '', content: '' }],
+          certificates: Array.isArray(p.certificates) && p.certificates.length ? p.certificates : [''],
         });
 
+        // 미리보기: photoId가 있으면 GridFS URL 사용
+        if (p.photoId) {
+          setPhotoPreview(`${API_BASE}/profiles/photo/${p.photoId}`);
+        } else if (p.photo && p.photo.startsWith('data:')) {
+          // 과거에 base64 저장해둔 게 있다면 임시로만 미리보기 사용 (다시 저장하면 photoId로 대체)
+          setPhotoPreview(p.photo);
+        }
       } catch (error) {
         console.warn("프로필 불러오기: ", error?.response?.status || error.message);
       } finally {
@@ -84,6 +98,11 @@ const MyPage = () => {
       }
     };
     init();
+
+    // objectURL 정리
+    return () => {
+      if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
+    };
   }, []);
 
   const handleChange = (e) => {
@@ -91,14 +110,15 @@ const MyPage = () => {
     if (name === 'photo') {
       const file = files?.[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfile(prev => ({ ...prev, photo: reader.result }));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setProfile(prev => ({ ...prev, [name]: value }));
+      // ✅ base64 변환 금지! —> 413 방지
+      setPhotoFile(file);
+      setPhotoPreview((prev) => {
+        if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
+      });
+      return;
     }
+    setProfile(prev => ({ ...prev, [name]: value }));
   };
 
   const handleEducationChange = (index, field, value) => {
@@ -141,9 +161,30 @@ const MyPage = () => {
       if (!token) return alert("로그인이 필요합니다");
 
       setSaving(true);
-      await axios.post('/api/profile', profile, {
+
+      // ✅ 1) 사진 선택되었으면 먼저 업로드(FormData) → fileId 획득
+      let photoId = profile.photoId;
+      if (photoFile) {
+        const fd = new FormData();
+        fd.append('file', photoFile);
+        // 새로운 사진 업로드 API 경로로 POST 요청을 보냅니다.
+        const up = await axios.post('/api/profiles/photo', fd, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+        });
+        photoId = up.data.fileId;
+      }
+
+      // ✅ 2) 프로필 저장 — 절대 base64 사진(photo) 넣지 말 것!
+      const payload = {
+        ...profile,
+        photoId,
+      };
+      delete payload.photo; // 혹시라도 남아있다면 제거
+
+      await axios.post('/api/profile', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
+
       alert('프로필 정보가 저장되었습니다.');
       navigate('/');
     } catch (error) {
@@ -180,8 +221,8 @@ const MyPage = () => {
           {/* Profile Photo */}
           <div className="flex flex-col items-center mb-10 mt-10">
             <div className="w-32 h-32 rounded-full border-4 border-gray-200 shadow-inner overflow-hidden flex items-center justify-center bg-gray-100">
-              {profile.photo ? (
-                <img src={profile.photo} alt="프로필" className="w-full h-full object-cover" />
+              {photoPreview ? (
+                <img src={photoPreview} alt="프로필" className="w-full h-full object-cover" />
               ) : (
                 <FiUser className="text-gray-400 text-5xl" />
               )}
@@ -305,9 +346,7 @@ const SectionCard = ({ title, icon, onAdd, children }) => (
         </button>
       )}
     </div>
-    <div className="space-y-4">
-      {children}
-    </div>
+    <div className="space-y-4">{children}</div>
   </div>
 );
 
@@ -361,3 +400,4 @@ const SelectField = ({ label, name, value, options, onChange }) => (
 );
 
 export default MyPage;
+

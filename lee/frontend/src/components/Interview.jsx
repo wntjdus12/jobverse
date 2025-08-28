@@ -7,7 +7,7 @@ import interviewerA from '../assets/interviewerA.png';
 import interviewerB from '../assets/interviewerB.png';
 import interviewerC from '../assets/interviewerC.png';
 import userProfile from '../assets/user.png';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 const Interview = () => {
   const [showModal, setShowModal] = useState(true);
@@ -23,12 +23,12 @@ const Interview = () => {
   const [round, setRound] = useState(0);
   const [firstAnswer, setFirstAnswer] = useState('');
   const [sessionId, setSessionId] = useState(null);
+  const [sttStatus, setSttStatus] = useState('idle');
+  const [isComposing, setIsComposing] = useState(false); // IME 조합 상태
 
-  // ✅ 프론트(8501) → 백엔드(3000) : 절대경로 사용
   const BASE_URL = import.meta.env.VITE_API_BASE || '/interview-api';
-  const SUMMARY_BASE = BASE_URL; // SummaryModal은 `${baseUrl}/summary/:id` 로 호출해야 함
+  const SUMMARY_BASE = BASE_URL;
 
-  // 🔊 자동재생 정책 우회 플래그
   const [ttsEnabled, setTtsEnabled] = useState(false);
 
   const interviewerIds = ['C', 'A', 'B'];
@@ -37,7 +37,6 @@ const Interview = () => {
   const audioRef = useRef(null);
   const ttsQueue = useRef([]);
   const isSpeaking = useRef(false);
-  const audioUnlockedRef = useRef(false); 
 
   const interviewerInfo = {
     A: { name: '인사팀', image: interviewerA },
@@ -68,17 +67,14 @@ const Interview = () => {
     return res;
   };
 
-  // 🔓 첫 사용자 동작 시 오디오 정책 해제
   const unlockAudio = async () => {
     try {
-      // WebAudio로 1프레임짜리 무음 재생
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const buffer = ctx.createBuffer(1, 1, 22050);
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(ctx.destination);
       source.start(0);
-      // Safari 대비 resume
       if (ctx.state === 'suspended') await ctx.resume();
     } catch (e) {
       console.warn('Audio unlock skipped:', e);
@@ -112,7 +108,6 @@ const Interview = () => {
 
       await audio.play().catch(err => {
         console.warn('TTS play blocked:', err);
-        // 재생이 막히면 큐를 유지한 채 enable만 기다림
       });
     } catch (err) {
       console.error('🔈 TTS 재생 오류:', err);
@@ -120,8 +115,7 @@ const Interview = () => {
     }
   };
 
-  // 서버 스트리밍 수신
-  const streamChatResponse = async (payload) => {
+  const getChatResponse = async (payload) => {
     try {
       const res = await safeFetch(`${BASE_URL}/chat`, {
         method: 'POST',
@@ -138,14 +132,8 @@ const Interview = () => {
       const decoder = new TextDecoder('utf-8');
 
       let buffer = '';
-      let fullText = '';
-      let sentenceBuffer = '';
+      let fullResponse = '';
       let endedByServer = preEnded;
-
-      if (interviewerHeader && !endedByServer) {
-        setCurrentInterviewer(interviewerHeader);
-        setChat(prev => [...prev, { sender: interviewerHeader, text: '' }]);
-      }
 
       while (true) {
         const { done, value } = await reader.read();
@@ -166,49 +154,26 @@ const Interview = () => {
             delta = json.answer || '';
           } catch { /* ignore */ }
 
-          if (/면접이 종료되었습니다/.test(delta)) endedByServer = true;
-          if (!interviewerHeader || endedByServer) break;
-
-          fullText += delta;
-          sentenceBuffer += delta;
-
-          setChat(prev => {
-            const updated = [...prev];
-            const last = updated[updated.length - 1];
-            if (last && last.sender === interviewerHeader) {
-              updated[updated.length - 1] = { ...last, text: (last.text || '') + delta };
-            }
-            return updated;
-          });
-
-          if (/[.!?…]\s?$/.test(sentenceBuffer)) {
-            ttsQueue.current.push({ text: sentenceBuffer.trim(), role: interviewerHeader });
-            sentenceBuffer = '';
-            playNextInQueue();
-          }
+          fullResponse += delta;
         }
-
-        if (endedByServer) break;
       }
 
-      if (!endedByServer && interviewerHeader && sentenceBuffer.trim()) {
-        ttsQueue.current.push({ text: sentenceBuffer.trim(), role: interviewerHeader });
-        playNextInQueue();
-      }
+      return {
+        interviewer: interviewerHeader,
+        text: fullResponse.trim(),
+        ended: endedByServer || /면접이 종료되었습니다/.test(fullResponse),
+      };
 
-      return { ended: endedByServer, text: fullText };
     } catch (err) {
       console.error('스트리밍 실패:', err.message);
       return { ended: false, text: '' };
     }
   };
 
-  // 첫 질문
   const pickFirstInterviewer = async (nameParam, jobParam) => {
     const name = nameParam ?? username;
     const role = jobParam ?? jobRole;
 
-    console.log('[FRONT]/start payload =', { userName: name, jobRole: role });
     const res = await safeFetch(`${BASE_URL}/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -224,6 +189,7 @@ const Interview = () => {
     setCurrentInterviewer(interviewerKey);
 
     const { question } = data;
+
     setChat([{ sender: interviewerKey, text: question }]);
     ttsQueue.current.push({ text: question, role: interviewerKey });
     playNextInQueue();
@@ -231,12 +197,12 @@ const Interview = () => {
     setRound(1);
   };
 
-  // 사용자 입력 전송
   const handleUserSubmit = async () => {
     if (!input.trim()) return;
 
     const userText = input.trim();
-    setChat(prev => [...prev, { sender: 'user', text: userText }]);
+    // 사용자 답변을 즉시 화면에 표시
+    setChat([{ sender: 'user', text: userText }]);
     setInput('');
 
     if (round === 1) setFirstAnswer(userText);
@@ -246,7 +212,7 @@ const Interview = () => {
       return;
     }
 
-    const { ended } = await streamChatResponse({
+    const { interviewer, text, ended } = await getChatResponse({
       sessionId,
       jobRole,
       message: userText,
@@ -257,15 +223,29 @@ const Interview = () => {
       setShowEndModal(true);
       return;
     }
+    
+    // 면접관의 답변이 오면, 현재 면접관 상태를 업데이트합니다.
+    if (interviewer) {
+      setCurrentInterviewer(interviewer);
+    }
+    
+    // 면접관의 답변이 오면, 채팅 목록을 면접관의 질문으로만 대체합니다.
+    setChat([
+      { sender: interviewer, text }
+    ]);
+
+    ttsQueue.current.push({ text, role: interviewer });
+    playNextInQueue();
 
     setRound(prev => prev + 1);
   };
 
-  // 음성 녹음(STT)
   const handleStartRecording = async () => {
     if (isRecording && mediaRecorder) {
       mediaRecorder.stop();
       setIsRecording(false);
+      setSttStatus('processing');
+      setInput(''); // STT 처리 중엔 입력창 비우기
       return;
     }
     try {
@@ -274,6 +254,7 @@ const Interview = () => {
       setMediaRecorder(recorder);
       audioChunksRef.current = [];
       setIsRecording(true);
+      setSttStatus('recording');
 
       recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
       recorder.onstop = async () => {
@@ -288,9 +269,13 @@ const Interview = () => {
             body: formData
           });
           const data = await res.json();
-          if (data.text) setInput(data.text);
+          if (data.text) {
+            setInput(data.text); // 사용자가 Enter로 확정해서 보낼 수 있게만 채움
+          }
         } catch (err) {
           console.error('STT 오류:', err);
+        } finally {
+          setSttStatus('idle');
         }
       };
 
@@ -310,7 +295,6 @@ const Interview = () => {
     setJobRole(job);
     setShowModal(false);
 
-    // 🔓 오디오 정책 해제 & TTS 허용
     await unlockAudio();
     setTtsEnabled(true);
   };
@@ -325,12 +309,17 @@ const Interview = () => {
     setShowSummary(true);
   };
 
-  // ✅ 추가된 useEffect: TTS가 활성화되면 첫 질문을 요청
   useEffect(() => {
     if (ttsEnabled && username && jobRole && chat.length === 0) {
       pickFirstInterviewer(username, jobRole);
     }
   }, [ttsEnabled, username, jobRole, chat.length]);
+
+  const getPlaceholderText = () => {
+    if (isRecording) return '녹음 중... 말씀하세요.';
+    if (sttStatus === 'processing') return '음성 인식 중...';
+    return '답변을 입력하세요';
+  };
 
   return (
     <div className="interview-fullscreen">
@@ -346,7 +335,6 @@ const Interview = () => {
         />
       )}
 
-      {/* ✅ 요약 API는 /interview-api/summary/:id 로 호출되도록 SummaryModal이 구현되어 있어야 함 */}
       <SummaryModal
         open={showSummary}
         sessionId={sessionId}
@@ -365,14 +353,25 @@ const Interview = () => {
       </div>
 
       <div className="question-display">
-        {chat
-          .filter(msg => msg.sender !== 'user')
-          .slice(-1)
-          .map((msg, idx) => (
-            <div key={idx} className="question-msg">
-              <strong>{interviewerInfo[msg.sender]?.name}:</strong> {msg.text}
-            </div>
-          ))}
+        {chat.map((msg, idx) => {
+          if (msg.sender === 'user') {
+            return (
+              <div key={idx} className="user-message-container">
+                <p className="answer-msg">
+                  <strong>{username}:</strong> {msg.text}
+                </p>
+              </div>
+            );
+          } else {
+            return (
+              <div key={idx} className="interviewer-message-container">
+                <p className="question-msg">
+                  <strong>{interviewerInfo[msg.sender]?.name}:</strong> {msg.text}
+                </p>
+              </div>
+            );
+          }
+        })}
       </div>
 
       <div className="user-bottom">
@@ -380,10 +379,16 @@ const Interview = () => {
         <div className="user-input-box">
           <input
             type="text"
-            placeholder="답변을 입력하세요"
+            placeholder={getPlaceholderText()}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleUserSubmit()}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={() => setIsComposing(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !isComposing && !e.nativeEvent?.isComposing) {
+                handleUserSubmit();
+              }
+            }}
           />
           <button onClick={handleStartRecording}>{isRecording ? '🛑' : '🎤'}</button>
           <button onClick={handleUserSubmit}>📤</button>

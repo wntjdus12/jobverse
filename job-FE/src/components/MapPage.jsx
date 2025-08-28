@@ -8,10 +8,10 @@ import Header from "./Header";
 // [수정] JobSelector.jsx의 jobCategories 구조와 완벽하게 일치시킨 zepLinks 객체
 const zepLinks = {
   개발: {
-    backend: "https://zep.us/play/dJGaXo",   // 백엔드 개발자
-    frontend: "https://zep.us/play/dJGaXo",  // 프론트엔드 개발자
-    ai: "https://zep.us/play/dJGaXo",        // AI/데이터 개발자
-    devops: "https://zep.us/play/dJGaXo",    // DevOps/인프라 개발자
+    backend: "https://zep.us/play/mkxRqe",   // 백엔드 개발자
+    frontend: "https://zep.us/play/YvPVnn",  // 프론트엔드 개발자
+    ai: "https://zep.us/play/nL94Ev",        // AI/데이터 개발자
+    devops: "https://zep.us/play/QaV5RJ",    // DevOps/인프라 개발자
     default: "https://zep.us/play/dJGaXo",   // 혹시 모를 기본값
   },
   마케팅: {
